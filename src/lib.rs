@@ -5,18 +5,36 @@ use std::fmt::{LowerExp, Write};
 
 use tenferro_runtime::{DType, Tensor, TensorScalar, TypedTensor};
 
-pub trait GetAsLowerExp {
-    fn get_as_lower_exp(&self, indices: &[usize]) -> Result<String, Box<dyn Error>>;
+pub trait Prettifiable {
+    fn type_as_string(&self) -> Result<String, Box<dyn Error>>;
+    fn shape_as_string(&self) -> Result<String, Box<dyn Error>>;
+    fn get_as_string(&self, indices: &[usize]) -> Result<String, Box<dyn Error>>;
 }
 
-impl<T: LowerExp + TensorScalar> GetAsLowerExp for TypedTensor<T> {
-    fn get_as_lower_exp(&self, indices: &[usize]) -> Result<String, Box<dyn Error>> {
+impl<T: LowerExp + TensorScalar> Prettifiable for TypedTensor<T> {
+    fn type_as_string(&self) -> Result<String, Box<dyn Error>> {
+        Ok(String::from("TypedTensor"))
+    }
+
+    fn shape_as_string(&self) -> Result<String, Box<dyn Error>> {
+        Ok(format!("{:?}", self.shape()))
+    }
+
+    fn get_as_string(&self, indices: &[usize]) -> Result<String, Box<dyn Error>> {
         Ok(format!("{:+<11.3e}", *self.get(indices)?))
     }
 }
 
-impl GetAsLowerExp for Tensor {
-    fn get_as_lower_exp(&self, indices: &[usize]) -> Result<String, Box<dyn Error>> {
+impl Prettifiable for Tensor {
+    fn type_as_string(&self) -> Result<String, Box<dyn Error>> {
+        Ok(format!("{:?} Tensor", self.dtype()))
+    }
+
+    fn shape_as_string(&self) -> Result<String, Box<dyn Error>> {
+        Ok(format!("{:?}", self.shape()))
+    }
+
+    fn get_as_string(&self, indices: &[usize]) -> Result<String, Box<dyn Error>> {
         match self.dtype() {
             DType::F32 => Ok(format!("{:+<11.3e}", *self.get::<f32>(indices)?)),
             DType::F64 => Ok(format!("{:+<11.3e}", *self.get::<f64>(indices)?)),
@@ -31,20 +49,14 @@ pub trait Prettify {
     fn prettify(&self) -> Result<String, Box<dyn Error>>;
 }
 
-impl<T> Prettify for TypedTensor<T> {
-    fn prettify(&self) -> Result<String, Box<dyn Error>> {
-        unimplemented!();
-    }
-}
-
-impl Prettify for Tensor {
+impl<T: Prettifiable> Prettify for T {
     fn prettify(&self) -> Result<String, Box<dyn Error>> {
         let mut x = String::new();
         writeln!(
             x,
-            "Tensor • dtype: {:?} • shape: {:?}",
-            self.dtype(),
-            self.shape()
+            "{} • shape: {}",
+            self.type_as_string()?,
+            self.shape_as_string()?
         )?;
         Ok(x)
     }
