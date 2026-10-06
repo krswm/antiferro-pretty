@@ -1,8 +1,31 @@
 // tenferro tensor pretty printed
 
 use std::error::Error;
+use std::fmt::{LowerExp, Write};
 
-use tenferro_runtime::{Tensor, TypedTensor};
+use tenferro_runtime::{DType, Tensor, TensorScalar, TypedTensor};
+
+pub trait GetAsLowerExp {
+    fn get_as_lower_exp(&self, indices: &[usize]) -> Result<String, Box<dyn Error>>;
+}
+
+impl<T: LowerExp + TensorScalar> GetAsLowerExp for TypedTensor<T> {
+    fn get_as_lower_exp(&self, indices: &[usize]) -> Result<String, Box<dyn Error>> {
+        Ok(format!("{:+<11.3e}", *self.get(indices)?))
+    }
+}
+
+impl GetAsLowerExp for Tensor {
+    fn get_as_lower_exp(&self, indices: &[usize]) -> Result<String, Box<dyn Error>> {
+        match self.dtype() {
+            DType::F32 => Ok(format!("{:+<11.3e}", *self.get::<f32>(indices)?)),
+            DType::F64 => Ok(format!("{:+<11.3e}", *self.get::<f64>(indices)?)),
+            DType::I32 => Ok(format!("{:+<11.3e}", *self.get::<i32>(indices)?)),
+            DType::I64 => Ok(format!("{:+<11.3e}", *self.get::<i64>(indices)?)),
+            _ => Err(format!("dtype unsupported by prettify: {:?}", self.dtype()).into()),
+        }
+    }
+}
 
 pub trait Prettify {
     fn prettify(&self) -> Result<String, Box<dyn Error>>;
@@ -16,7 +39,14 @@ impl<T> Prettify for TypedTensor<T> {
 
 impl Prettify for Tensor {
     fn prettify(&self) -> Result<String, Box<dyn Error>> {
-        unimplemented!();
+        let mut x = String::new();
+        writeln!(
+            x,
+            "Tensor • dtype: {:?} • shape: {:?}",
+            self.dtype(),
+            self.shape()
+        )?;
+        Ok(x)
     }
 }
 
