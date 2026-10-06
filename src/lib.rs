@@ -36,7 +36,7 @@ mod tests {
             ",
             //  +X.XXXeXXXX
         );
-        assert_eq!(prettify(&tensor)?, expected);
+        assert_eq!(tensor.prettify()?, expected);
         Ok(())
     }
 
@@ -52,7 +52,7 @@ mod tests {
             ",
             //  +X.XXXeXXXX
         );
-        assert_eq!(prettify(&tensor)?, expected);
+        assert_eq!(tensor.prettify()?, expected);
         Ok(())
     }
 
@@ -74,7 +74,7 @@ mod tests {
             ",
             //  +X.XXXeXXXX
         );
-        assert_eq!(prettify(&tensor)?, expected);
+        assert_eq!(tensor.prettify()?, expected);
         Ok(())
     }
 
@@ -91,7 +91,7 @@ mod tests {
             ",
             //  +X.XXXeXXXX
         );
-        assert_eq!(prettify(&tensor)?, expected);
+        assert_eq!(tensor.prettify()?, expected);
         Ok(())
     }
 
@@ -113,7 +113,7 @@ mod tests {
             ",
             //  +X.XXXeXXXX +X.XXXeXXXX +X.XXXeXXXX  ⋯  +X.XXXeXXXX +X.XXXeXXXX +X.XXXeXXXX
         );
-        assert_eq!(prettify(&tensor)?, expected);
+        assert_eq!(tensor.prettify()?, expected);
         Ok(())
     }
 
@@ -135,7 +135,7 @@ mod tests {
             ",
             //  +X.XXXeXXXX +X.XXXeXXXX
         );
-        assert_eq!(prettify(&tensor)?, expected);
+        assert_eq!(tensor.prettify()?, expected);
         Ok(())
     }
 
@@ -152,7 +152,7 @@ mod tests {
             ",
             //  +X.XXXeXXXX +X.XXXeXXXX +X.XXXeXXXX  ⋯  +X.XXXeXXXX +X.XXXeXXXX +X.XXXeXXXX
         );
-        assert_eq!(prettify(&tensor)?, expected);
+        assert_eq!(tensor.prettify()?, expected);
         Ok(())
     }
 
@@ -169,7 +169,7 @@ mod tests {
             ",
             //  +X.XXXeXXXX +X.XXXeXXXX
         );
-        assert_eq!(prettify(&tensor)?, expected);
+        assert_eq!(tensor.prettify()?, expected);
         Ok(())
     }
 
@@ -219,7 +219,7 @@ mod tests {
             ",
             //  +X.XXXeXXXX +X.XXXeXXXX
         );
-        assert_eq!(prettify(&tensor)?, expected);
+        assert_eq!(tensor.prettify()?, expected);
         Ok(())
     }
 
@@ -244,7 +244,7 @@ mod tests {
             ",
             //  +X.XXXeXXXX +X.XXXeXXXX
         );
-        assert_eq!(prettify(&tensor)?, expected);
+        assert_eq!(tensor.prettify()?, expected);
         Ok(())
     }
 
@@ -330,7 +330,7 @@ mod tests {
             ",
             //  +X.XXXeXXXX +X.XXXeXXXX
         );
-        assert_eq!(prettify(&tensor)?, expected);
+        assert_eq!(tensor.prettify()?, expected);
         Ok(())
     }
 
@@ -368,7 +368,7 @@ mod tests {
             ",
             //  +X.XXXeXXXX +X.XXXeXXXX
         );
-        assert_eq!(prettify(&tensor)?, expected);
+        assert_eq!(tensor.prettify()?, expected);
         Ok(())
     }
 }
