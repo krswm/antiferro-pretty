@@ -2,10 +2,8 @@
 
 use std::error::Error;
 
-use tenferro_runtime::Tensor;
-
 #[allow(dead_code)]
-fn prettify(_tensor: &Tensor) -> Result<String, Box<dyn Error>> {
+fn prettify<T>(_tensor: &T) -> Result<String, Box<dyn Error>> {
     unimplemented!();
 }
 
@@ -13,8 +11,26 @@ fn prettify(_tensor: &Tensor) -> Result<String, Box<dyn Error>> {
 mod tests {
     use super::*;
 
+    use tenferro_runtime::{Tensor, TypedTensor};
+
     #[test]
-    fn test_scalar() -> Result<(), Box<dyn Error>> {
+    fn test_typed_tensor() -> Result<(), Box<dyn Error>> {
+        let tensor = TypedTensor::<f64>::from_vec_col_major(vec![], vec![0.0])?;
+        let expected = String::from(
+            "\
+            TypedTensor • dtype: F64 • shape: []\n\
+            │ ┌─────────────┐\n\
+            │ │ +0.000e0    │\n\
+            ╵ └─────────────┘\n\
+            ",
+            //  +X.XXXeXXXX
+        );
+        assert_eq!(prettify(&tensor)?, expected);
+        Ok(())
+    }
+
+    #[test]
+    fn test_tensor() -> Result<(), Box<dyn Error>> {
         let tensor = Tensor::from_vec_col_major(vec![], vec![0.0])?;
         let expected = String::from(
             "\
@@ -299,6 +315,44 @@ mod tests {
             │ ┌─────────────────────────┐\n\
             │ │ +5.200e1    +5.400e1    │\n\
             │ │ +5.300e1    +5.500e1    │\n\
+            ╵ └─────────────────────────┘\n\
+            ",
+            //  +X.XXXeXXXX +X.XXXeXXXX
+        );
+        assert_eq!(prettify(&tensor)?, expected);
+        Ok(())
+    }
+
+    #[test]
+    fn test_2222() -> Result<(), Box<dyn Error>> {
+        let tensor =
+            Tensor::from_vec_col_major(vec![2, 2, 2, 2], (0..16).map(|x| x as f64).collect())?;
+        let expected = String::from(
+            "\
+            Tensor • dtype: F64 • shape: [2, 2, 2, 2]\n\
+            │\n\
+            ├╴[:, :, 0, 0]\n\
+            │ ┌─────────────────────────┐\n\
+            │ │ +0.000e0    +2.000e0    │\n\
+            │ │ +1.000e0    +3.000e0    │\n\
+            │ └─────────────────────────┘\n\
+            │\n\
+            ├╴[:, :, 1, 0]\n\
+            │ ┌─────────────────────────┐\n\
+            │ │ +4.000e0    +6.000e0    │\n\
+            │ │ +5.000e0    +7.000e0    │\n\
+            │ └─────────────────────────┘\n\
+            │\n\
+            ├╴[:, :, 0, 1]\n\
+            │ ┌─────────────────────────┐\n\
+            │ │ +8.000e0    +1.000e1    │\n\
+            │ │ +9.000e0    +1.100e1    │\n\
+            │ └─────────────────────────┘\n\
+            │\n\
+            ├╴[:, :, 1, 1]\n\
+            │ ┌─────────────────────────┐\n\
+            │ │ +1.200e1    +1.400e1    │\n\
+            │ │ +1.300e1    +1.500e1    │\n\
             ╵ └─────────────────────────┘\n\
             ",
             //  +X.XXXeXXXX +X.XXXeXXXX
