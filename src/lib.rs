@@ -2,16 +2,29 @@
 
 use std::error::Error;
 
+use tenferro_runtime::{Tensor, TypedTensor};
+use tenferro_tensor::error::Error as TError;
+
+trait Prettifiable {
+    fn get_as_f64(&self, indices: &[usize]) -> Result<f64, TError>;
+}
+
+impl<T> Prettifiable for TypedTensor<T> {
+    fn get_as_f64(&self, indices: &[usize]) -> Result<f64, TError> {
+        let value = self.get(indices);
+        let value = *value as f32;
+        Ok(value)
+    }
+}
+
 #[allow(dead_code)]
-fn prettify<T>(_tensor: &T) -> Result<String, Box<dyn Error>> {
+fn prettify<T: Prettifiable>(tensor: &T) -> Result<String, Box<dyn Error>> {
     unimplemented!();
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    use tenferro_runtime::{Tensor, TypedTensor};
 
     #[test]
     fn test_typed_tensor() -> Result<(), Box<dyn Error>> {
