@@ -3,23 +3,21 @@
 use std::error::Error;
 
 use tenferro_runtime::{Tensor, TypedTensor};
-use tenferro_tensor::error::Error as TError;
 
-trait Prettifiable {
-    fn get_as_f64(&self, indices: &[usize]) -> Result<f64, TError>;
+pub trait Prettify {
+    fn prettify(&self) -> Result<String, Box<dyn Error>>;
 }
 
-impl<T> Prettifiable for TypedTensor<T> {
-    fn get_as_f64(&self, indices: &[usize]) -> Result<f64, TError> {
-        let value = self.get(indices);
-        let value = *value as f32;
-        Ok(value)
+impl<T> Prettify for TypedTensor<T> {
+    fn prettify(&self) -> Result<String, Box<dyn Error>> {
+        unimplemented!();
     }
 }
 
-#[allow(dead_code)]
-fn prettify<T: Prettifiable>(tensor: &T) -> Result<String, Box<dyn Error>> {
-    unimplemented!();
+impl Prettify for Tensor {
+    fn prettify(&self) -> Result<String, Box<dyn Error>> {
+        unimplemented!();
+    }
 }
 
 #[cfg(test)]

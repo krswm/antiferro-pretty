@@ -4,4 +4,3 @@ edition = "2024"
 
 [dependencies]
 tenferro-runtime = "0.7"
-tenferro-tensor = "0.7"
