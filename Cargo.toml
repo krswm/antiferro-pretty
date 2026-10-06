@@ -1,0 +1,6 @@
+[package]
+name = "tenferro-show"
+edition = "2024"
+
+[dependencies]
+tenferro-runtime = "0.7"
