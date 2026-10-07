@@ -95,6 +95,50 @@ impl<T: Prettifiable> Prettify for T {
                 }
                 writeln!(x, "╵ └─────────────┘")?;
             },
+            2 => {
+                write!(x, "│ ┌")?;
+                for j in select_indices(self.shape()[1]) {
+                    if j == ELLIPSIS {
+                        write!(x, "────")?;
+                    } else {
+                        write!(x, "────────────")?;
+                    }
+                }
+                writeln!(x, "─┐")?;
+
+                for i in select_indices(self.shape()[0]) {
+                    write!(x, "│ │")?;
+                    if i == ELLIPSIS {
+                        for j in select_indices(self.shape()[1]) {
+                            if j == ELLIPSIS {
+                                write!(x, "    ")?;
+                            } else {
+                                write!(x, "      ⋮     ")?;
+                            }
+                        }
+                    } else {
+                        for j in select_indices(self.shape()[1]) {
+                            if j == ELLIPSIS {
+                                write!(x, "  ⋯ ")?;
+                            } else {
+                                write!(x, " {}", self.get_as_string(&[i, j])?)?;
+                            }
+                        }
+                    }
+                    writeln!(x, " │")?;
+                }
+
+                write!(x, "╵ └")?;
+                for j in select_indices(self.shape()[1]) {
+                    if j == ELLIPSIS {
+                        write!(x, "────")?;
+                    } else {
+                        write!(x, "────────────")?;
+                    }
+                }
+                writeln!(x, "─┘")?;
+                // TDD is powerful
+            }
             _ => todo!()
         }
 
