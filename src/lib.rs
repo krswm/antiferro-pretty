@@ -6,40 +6,40 @@ use std::fmt::{LowerExp, Write};
 use tenferro_runtime::{DType, Tensor, TensorScalar, TypedTensor};
 
 pub trait Prettifiable {
-    fn type_as_string(&self) -> Result<String, Box<dyn Error>>;
-    fn shape_as_string(&self) -> Result<String, Box<dyn Error>>;
+    fn type_as_string(&self) -> String;
+    fn shape(&self) -> &[usize];
     fn get_as_string(&self, indices: &[usize]) -> Result<String, Box<dyn Error>>;
 }
 
 impl<T: LowerExp + TensorScalar> Prettifiable for TypedTensor<T> {
-    fn type_as_string(&self) -> Result<String, Box<dyn Error>> {
-        Ok(String::from("TypedTensor"))
+    fn type_as_string(&self) -> String {
+        String::from("TypedTensor")
     }
 
-    fn shape_as_string(&self) -> Result<String, Box<dyn Error>> {
-        Ok(format!("{:?}", self.shape()))
+    fn shape(&self) -> &[usize] {
+        self.shape()
     }
 
     fn get_as_string(&self, indices: &[usize]) -> Result<String, Box<dyn Error>> {
-        Ok(format!("{:+<11.3e}", *self.get(indices)?))
+        Ok(format!("{:<+11.3e}", *self.get(indices)?))
     }
 }
 
 impl Prettifiable for Tensor {
-    fn type_as_string(&self) -> Result<String, Box<dyn Error>> {
-        Ok(format!("{:?} Tensor", self.dtype()))
+    fn type_as_string(&self) -> String {
+        format!("{:?} Tensor", self.dtype())
     }
 
-    fn shape_as_string(&self) -> Result<String, Box<dyn Error>> {
-        Ok(format!("{:?}", self.shape()))
+    fn shape(&self) -> &[usize] {
+        self.shape()
     }
 
     fn get_as_string(&self, indices: &[usize]) -> Result<String, Box<dyn Error>> {
         match self.dtype() {
-            DType::F32 => Ok(format!("{:+<11.3e}", *self.get::<f32>(indices)?)),
-            DType::F64 => Ok(format!("{:+<11.3e}", *self.get::<f64>(indices)?)),
-            DType::I32 => Ok(format!("{:+<11.3e}", *self.get::<i32>(indices)?)),
-            DType::I64 => Ok(format!("{:+<11.3e}", *self.get::<i64>(indices)?)),
+            DType::F32 => Ok(format!("{:<+11.3e}", *self.get::<f32>(indices)?)),
+            DType::F64 => Ok(format!("{:<+11.3e}", *self.get::<f64>(indices)?)),
+            DType::I32 => Ok(format!("{:<+11.3e}", *self.get::<i32>(indices)?)),
+            DType::I64 => Ok(format!("{:<+11.3e}", *self.get::<i64>(indices)?)),
             _ => Err(format!("dtype unsupported by prettify: {:?}", self.dtype()).into()),
         }
     }
@@ -52,12 +52,23 @@ pub trait Prettify {
 impl<T: Prettifiable> Prettify for T {
     fn prettify(&self) -> Result<String, Box<dyn Error>> {
         let mut x = String::new();
+
         writeln!(
             x,
-            "{} • shape: {}",
-            self.type_as_string()?,
-            self.shape_as_string()?
+            "{} • shape: {:?}",
+            self.type_as_string(),
+            self.shape()
         )?;
+
+        match self.shape().len() {
+            0 => {
+                writeln!(x, "│ ┌─────────────┐")?;
+                writeln!(x, "│ │ {} │", self.get_as_string(&[])?)?;
+                writeln!(x, "╵ └─────────────┘")?;
+            },
+            _ => todo!()
+        }
+
         Ok(x)
     }
 }
