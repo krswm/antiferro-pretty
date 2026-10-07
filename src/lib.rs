@@ -9,6 +9,7 @@ pub trait Prettifiable {
     fn type_as_string(&self) -> String;
     fn shape(&self) -> &[usize];
     fn get_as_string(&self, indices: &[usize]) -> Result<String, Box<dyn Error>>;
+    fn value_as_string(&self, offset: usize) -> Result<String, Box<dyn Error>>;
 }
 
 impl<T: LowerExp + TensorScalar> Prettifiable for TypedTensor<T> {
@@ -22,6 +23,10 @@ impl<T: LowerExp + TensorScalar> Prettifiable for TypedTensor<T> {
 
     fn get_as_string(&self, indices: &[usize]) -> Result<String, Box<dyn Error>> {
         Ok(format!("{:<+11.3e}", *self.get(indices)?))
+    }
+
+    fn value_as_string(&self, offset: usize) -> Result<String, Box<dyn Error>> {
+        Ok(format!("{:<+11.3e}", self.as_slice()?[offset]))
     }
 }
 
@@ -40,6 +45,16 @@ impl Prettifiable for Tensor {
             DType::F64 => Ok(format!("{:<+11.3e}", *self.get::<f64>(indices)?)),
             DType::I32 => Ok(format!("{:<+11.3e}", *self.get::<i32>(indices)?)),
             DType::I64 => Ok(format!("{:<+11.3e}", *self.get::<i64>(indices)?)),
+            _ => Err(format!("dtype unsupported by prettify: {:?}", self.dtype()).into()),
+        }
+    }
+
+    fn value_as_string(&self, offset: usize) -> Result<String, Box<dyn Error>> {
+        match self.dtype() {
+            DType::F32 => Ok(format!("{:<+11.3e}", self.as_slice::<f32>()?[offset])),
+            DType::F64 => Ok(format!("{:<+11.3e}", self.as_slice::<f64>()?[offset])),
+            DType::I32 => Ok(format!("{:<+11.3e}", self.as_slice::<i32>()?[offset])),
+            DType::I64 => Ok(format!("{:<+11.3e}", self.as_slice::<i64>()?[offset])),
             _ => Err(format!("dtype unsupported by prettify: {:?}", self.dtype()).into()),
         }
     }
