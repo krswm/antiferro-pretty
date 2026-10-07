@@ -99,6 +99,63 @@ fn prettify<T: Prettifiable>(tensor: &T, x: &mut String) -> Result<(), Box<dyn E
         2 => {
             prettify_matrix(tensor, tensor.shape()[0], tensor.shape()[1], 0, true, x)?;
         }
+        _ => {
+            let indices = {
+                let mut y: Vec<Vec<usize>> = Vec::new();
+
+                for p in select_indices(tensor.shape()[tensor.shape().len() - 1]) {
+                    if p != ELLIPSIS {
+                        y.push(vec![p]);
+                    }
+                }
+                
+                for a in tensor.shape()[2..(tensor.shape().len() - 1)].into_iter().rev() {
+                    let mut z: Vec<Vec<usize>> = Vec::new();
+                    for b in &y {
+                        for c in select_indices(*a) {
+                            if c != ELLIPSIS {
+                                z.push([vec![c], b.clone()].concat());
+                            }
+                        }
+                    }
+                    y = z;
+                }
+                y
+            };
+            println!("{:?} {:?}", tensor.shape(), indices);
+
+            for (i, k) in indices.clone().into_iter().enumerate() {
+                writeln!(x, "│")?;
+                write!(x, "├╴[:, :")?;
+
+                for z in &k {
+                    write!(x, ", {z}")?;
+                }
+                writeln!(x, "]")?;
+
+                let offset = {
+                    let mut y = 0;
+                    for (l, s) in std::iter::zip(k.clone().into_iter().rev(), tensor.shape()[2..].into_iter().rev()) {
+                        y *= s;
+                        y += l;
+                    }
+                    y *= tensor.shape()[1];
+                    y *= tensor.shape()[0];
+                    y
+                };
+                println!("{:?} {}", k, offset);
+
+                prettify_matrix(
+                    tensor,
+                    tensor.shape()[0],
+                    tensor.shape()[1],
+                    offset,
+                    i == indices.len() - 1,
+                    x,
+                )?;
+            }
+        }
+        /*
         3 => {
             for k in select_indices(tensor.shape()[2]) {
                 if k == ELLIPSIS {
@@ -139,6 +196,7 @@ fn prettify<T: Prettifiable>(tensor: &T, x: &mut String) -> Result<(), Box<dyn E
             }
         }
         _ => todo!(),
+        */
     }
 
     Ok(())
