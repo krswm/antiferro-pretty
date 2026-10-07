@@ -1,11 +1,9 @@
-// tenferro tensor pretty printed
-
 use std::error::Error;
 use std::fmt::{LowerExp, Write};
 
 use tenferro_runtime::{DType, Tensor, TensorScalar, TypedTensor};
 
-pub trait Prettifiable {
+trait Prettifiable {
     fn type_as_string(&self) -> String;
     fn shape(&self) -> &[usize];
     fn value_as_string(&self, offset: usize) -> Result<String, Box<dyn Error>>;
@@ -40,7 +38,7 @@ impl Prettifiable for Tensor {
             DType::F64 => Ok(format!("{:<+11.3e}", self.as_slice::<f64>()?[offset])),
             DType::I32 => Ok(format!("{:<+11.3e}", self.as_slice::<i32>()?[offset])),
             DType::I64 => Ok(format!("{:<+11.3e}", self.as_slice::<i64>()?[offset])),
-            _ => Err(format!("dtype unsupported by prettify: {:?}", self.dtype()).into()),
+            dtype => Err(format!("dtype unsupported by pretty: {:?}", dtype).into()),
         }
     }
 }
@@ -57,33 +55,25 @@ impl<T: Prettifiable> Pretty for T {
     }
 
     fn prettify(&self) -> Result<String, Box<dyn Error>> {
-        let mut x = String::new();
-        prettify(self, &mut x)?;
-        Ok(x)
+        let mut string = String::new();
+        prettify(self, &mut string)?;
+        Ok(string)
     }
 }
 
-const ELLIPSIS: usize = usize::MAX;
+const OMIT: usize = usize::MAX;
 
-fn select_indices(dim_shape: usize) -> Vec<usize> {
-    if dim_shape >= 7 {
-        vec![
-            0,
-            1,
-            2,
-            ELLIPSIS,
-            dim_shape - 3,
-            dim_shape - 2,
-            dim_shape - 1,
-        ]
+fn select_indices(num: usize) -> Vec<usize> {
+    if num >= 7 {
+        vec![0, 1, 2, OMIT, num - 3, num - 2, num - 1]
     } else {
-        (0..dim_shape).collect()
+        (0..num).collect()
     }
 }
 
-fn prettify<T: Prettifiable>(tensor: &T, x: &mut String) -> Result<(), Box<dyn Error>> {
+fn prettify<T: Prettifiable>(tensor: &T, string: &mut String) -> Result<(), Box<dyn Error>> {
     writeln!(
-        x,
+        string,
         "{} • shape: {:?}",
         tensor.type_as_string(),
         tensor.shape()
@@ -91,112 +81,77 @@ fn prettify<T: Prettifiable>(tensor: &T, x: &mut String) -> Result<(), Box<dyn E
 
     match tensor.shape().len() {
         0 => {
-            prettify_matrix(tensor, 1, 1, 0, true, x)?;
+            prettify_matrix(tensor, 1, 1, 0, true, string)?;
         }
         1 => {
-            prettify_matrix(tensor, tensor.shape()[0], 1, 0, true, x)?;
+            prettify_matrix(tensor, tensor.shape()[0], 1, 0, true, string)?;
         }
         2 => {
-            prettify_matrix(tensor, tensor.shape()[0], tensor.shape()[1], 0, true, x)?;
+            prettify_matrix(
+                tensor,
+                tensor.shape()[0],
+                tensor.shape()[1],
+                0,
+                true,
+                string,
+            )?;
         }
-        _ => {
-            let indices = {
-                let mut y: Vec<Vec<usize>> = Vec::new();
+        rank => {
+            let selected = {
+                let mut selected = Vec::new();
 
-                for p in select_indices(tensor.shape()[tensor.shape().len() - 1]) {
-                    if p != ELLIPSIS {
-                        y.push(vec![p]);
+                for index in select_indices(tensor.shape()[rank - 1]) {
+                    if index != OMIT {
+                        selected.push(vec![index]);
                     }
                 }
-                
-                for a in tensor.shape()[2..(tensor.shape().len() - 1)].into_iter().rev() {
-                    let mut z: Vec<Vec<usize>> = Vec::new();
-                    for b in &y {
-                        for c in select_indices(*a) {
-                            if c != ELLIPSIS {
-                                z.push([vec![c], b.clone()].concat());
+
+                for num in tensor.shape()[2..(rank - 1)].iter().rev() {
+                    let mut new_selected: Vec<Vec<usize>> = Vec::new();
+                    for indices in &selected {
+                        for index in select_indices(*num) {
+                            if index != OMIT {
+                                new_selected.push([vec![index], indices.clone()].concat());
                             }
                         }
                     }
-                    y = z;
+                    selected = new_selected;
                 }
-                y
+
+                selected
             };
-            println!("{:?} {:?}", tensor.shape(), indices);
 
-            for (i, k) in indices.clone().into_iter().enumerate() {
-                writeln!(x, "│")?;
-                write!(x, "├╴[:, :")?;
-
-                for z in &k {
-                    write!(x, ", {z}")?;
+            for (i, indices) in selected.iter().enumerate() {
+                writeln!(string, "│")?;
+                write!(string, "├╴[:, :")?;
+                for index in indices {
+                    write!(string, ", {index}")?;
                 }
-                writeln!(x, "]")?;
+                writeln!(string, "]")?;
 
                 let offset = {
-                    let mut y = 0;
-                    for (l, s) in std::iter::zip(k.clone().into_iter().rev(), tensor.shape()[2..].into_iter().rev()) {
-                        y *= s;
-                        y += l;
+                    let mut offset = 0;
+                    for (index, num) in
+                        std::iter::zip(indices.iter().rev(), tensor.shape()[2..].iter().rev())
+                    {
+                        offset *= num;
+                        offset += index;
                     }
-                    y *= tensor.shape()[1];
-                    y *= tensor.shape()[0];
-                    y
+                    offset *= tensor.shape()[1];
+                    offset *= tensor.shape()[0];
+                    offset
                 };
-                println!("{:?} {}", k, offset);
 
                 prettify_matrix(
                     tensor,
                     tensor.shape()[0],
                     tensor.shape()[1],
                     offset,
-                    i == indices.len() - 1,
-                    x,
+                    i == selected.len() - 1,
+                    string,
                 )?;
             }
         }
-        /*
-        3 => {
-            for k in select_indices(tensor.shape()[2]) {
-                if k == ELLIPSIS {
-                    continue;
-                }
-                writeln!(x, "│")?;
-                writeln!(x, "├╴[:, :, {}]", k)?;
-                prettify_matrix(
-                    tensor,
-                    tensor.shape()[0],
-                    tensor.shape()[1],
-                    tensor.shape()[0] * tensor.shape()[1] * k,
-                    k == tensor.shape()[2] - 1,
-                    x,
-                )?;
-            }
-        }
-        4 => {
-            for l in select_indices(tensor.shape()[3]) {
-                if l == ELLIPSIS {
-                    continue;
-                }
-                for k in select_indices(tensor.shape()[2]) {
-                    if k == ELLIPSIS {
-                        continue;
-                    }
-                    writeln!(x, "│")?;
-                    writeln!(x, "├╴[:, :, {}, {}]", k, l)?;
-                    prettify_matrix(
-                        tensor,
-                        tensor.shape()[0],
-                        tensor.shape()[1],
-                        tensor.shape()[0] * tensor.shape()[1] * (k + tensor.shape()[2] * l),
-                        k == tensor.shape()[2] - 1 && l == tensor.shape()[3] - 1,
-                        x,
-                    )?;
-                }
-            }
-        }
-        _ => todo!(),
-        */
     }
 
     Ok(())
@@ -204,58 +159,58 @@ fn prettify<T: Prettifiable>(tensor: &T, x: &mut String) -> Result<(), Box<dyn E
 
 fn prettify_matrix<T: Prettifiable>(
     tensor: &T,
-    shape_0: usize,
-    shape_1: usize,
+    num_rows: usize,
+    num_cols: usize,
     offset: usize,
     is_last_matrix: bool,
-    x: &mut String,
+    string: &mut String,
 ) -> Result<(), Box<dyn Error>> {
-    write!(x, "│ ┌")?;
-    for j in select_indices(shape_1) {
-        if j == ELLIPSIS {
-            write!(x, "────")?;
+    write!(string, "│ ┌")?;
+    for col in select_indices(num_cols) {
+        if col == OMIT {
+            write!(string, "────")?;
         } else {
-            write!(x, "────────────")?;
+            write!(string, "────────────")?;
         }
     }
-    writeln!(x, "─┐")?;
+    writeln!(string, "─┐")?;
 
-    for i in select_indices(shape_0) {
-        write!(x, "│ │")?;
-        if i == ELLIPSIS {
-            for j in select_indices(shape_1) {
-                if j == ELLIPSIS {
-                    write!(x, "    ")?;
+    for row in select_indices(num_rows) {
+        write!(string, "│ │")?;
+        if row == OMIT {
+            for col in select_indices(num_cols) {
+                if col == OMIT {
+                    write!(string, "    ")?;
                 } else {
-                    write!(x, "      ⋮     ")?;
+                    write!(string, "      ⋮     ")?;
                 }
             }
         } else {
-            for j in select_indices(shape_1) {
-                if j == ELLIPSIS {
-                    write!(x, "  ⋯ ")?;
+            for col in select_indices(num_cols) {
+                if col == OMIT {
+                    write!(string, "  ⋯ ")?;
                 } else {
-                    let fine_offset = i + shape_0 * j;
-                    write!(x, " {}", tensor.value_as_string(offset + fine_offset)?)?;
+                    let fine_offset = row + num_rows * col;
+                    write!(string, " {}", tensor.value_as_string(offset + fine_offset)?)?;
                 }
             }
         }
-        writeln!(x, " │")?;
+        writeln!(string, " │")?;
     }
 
     if is_last_matrix {
-        write!(x, "╵ └")?;
+        write!(string, "╵ └")?;
     } else {
-        write!(x, "│ └")?;
+        write!(string, "│ └")?;
     }
-    for j in select_indices(shape_1) {
-        if j == ELLIPSIS {
-            write!(x, "────")?;
+    for col in select_indices(num_cols) {
+        if col == OMIT {
+            write!(string, "────")?;
         } else {
-            write!(x, "────────────")?;
+            write!(string, "────────────")?;
         }
     }
-    writeln!(x, "─┘")?;
+    writeln!(string, "─┘")?;
 
     Ok(())
 }
