@@ -67,15 +67,15 @@ const ELLIPSIS: usize = usize::MAX;
 
 fn select_indices(dim_shape: usize) -> Vec<usize> {
     if dim_shape >= 7 {
-        let mut x = Vec::with_capacity(7);
-        x.push(0);
-        x.push(1);
-        x.push(2);
-        x.push(ELLIPSIS);
-        x.push(dim_shape - 3);
-        x.push(dim_shape - 2);
-        x.push(dim_shape - 1);
-        x
+        vec![
+            0,
+            1,
+            2,
+            ELLIPSIS,
+            dim_shape - 3,
+            dim_shape - 2,
+            dim_shape - 1,
+        ]
     } else {
         (0..dim_shape).collect()
     }
@@ -101,15 +101,38 @@ fn prettify<T: Prettifiable>(tensor: &T, x: &mut String) -> Result<(), Box<dyn E
         }
         3 => {
             for k in select_indices(tensor.shape()[2]) {
-                if k != ELLIPSIS {
+                if k == ELLIPSIS {
+                    continue;
+                }
+                writeln!(x, "│")?;
+                writeln!(x, "├╴[:, :, {}]", k)?;
+                prettify_matrix(
+                    tensor,
+                    tensor.shape()[0],
+                    tensor.shape()[1],
+                    tensor.shape()[0] * tensor.shape()[1] * k,
+                    k == tensor.shape()[2] - 1,
+                    x,
+                )?;
+            }
+        }
+        4 => {
+            for l in select_indices(tensor.shape()[3]) {
+                if l == ELLIPSIS {
+                    continue;
+                }
+                for k in select_indices(tensor.shape()[2]) {
+                    if k == ELLIPSIS {
+                        continue;
+                    }
                     writeln!(x, "│")?;
-                    writeln!(x, "├╴[:, :, {}]", k)?;
+                    writeln!(x, "├╴[:, :, {}, {}]", k, l)?;
                     prettify_matrix(
                         tensor,
                         tensor.shape()[0],
                         tensor.shape()[1],
-                        tensor.shape()[0] * tensor.shape()[1] * k,
-                        k == tensor.shape()[2] - 1,
+                        tensor.shape()[0] * tensor.shape()[1] * (k + tensor.shape()[2] * l),
+                        k == tensor.shape()[2] - 1 && l == tensor.shape()[3] - 1,
                         x,
                     )?;
                 }
