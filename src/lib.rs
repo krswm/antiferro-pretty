@@ -1,31 +1,49 @@
 use std::error::Error;
-use std::fmt::{LowerExp, Write};
+use std::fmt::Write;
 
-use tenferro_runtime::{DType, Tensor, TensorScalar, TypedTensor};
+use tenferro_runtime::{DType, Tensor, TypedTensor};
 
 trait Prettifiable {
     fn type_as_string(&self) -> String;
+    fn dtype_as_string(&self) -> String;
     fn shape(&self) -> &[usize];
     fn value_as_string(&self, offset: usize) -> Result<String, Box<dyn Error>>;
 }
 
-impl<T: LowerExp + TensorScalar> Prettifiable for TypedTensor<T> {
-    fn type_as_string(&self) -> String {
-        String::from("TypedTensor")
-    }
+macro_rules! impl_prettifiable_for_typed_tensor {
+    ($T:ty, $dtype:literal) => {
+        impl Prettifiable for TypedTensor<$T> {
+            fn type_as_string(&self) -> String {
+                String::from("TypedTensor")
+            }
 
-    fn shape(&self) -> &[usize] {
-        self.shape()
-    }
+            fn dtype_as_string(&self) -> String {
+                String::from($dtype)
+            }
 
-    fn value_as_string(&self, offset: usize) -> Result<String, Box<dyn Error>> {
-        Ok(format!("{:<+11.3e}", self.as_slice()?[offset]))
-    }
+            fn shape(&self) -> &[usize] {
+                self.shape()
+            }
+
+            fn value_as_string(&self, offset: usize) -> Result<String, Box<dyn Error>> {
+                Ok(format!("{:<+11.3e}", self.as_slice()?[offset]))
+            }
+        }
+    };
 }
+
+impl_prettifiable_for_typed_tensor!(f32, "F32");
+impl_prettifiable_for_typed_tensor!(f64, "F64");
+impl_prettifiable_for_typed_tensor!(i32, "I32");
+impl_prettifiable_for_typed_tensor!(i64, "I64");
 
 impl Prettifiable for Tensor {
     fn type_as_string(&self) -> String {
-        format!("{:?} Tensor", self.dtype())
+        String::from("Tensor")
+    }
+
+    fn dtype_as_string(&self) -> String {
+        format!("{:?}", self.dtype())
     }
 
     fn shape(&self) -> &[usize] {
@@ -58,6 +76,8 @@ impl<T: Prettifiable> Pretty for T {
     ///
     /// Internally, this method uses [prettify].
     ///
+    /// Supported dtypes are `F32`, `F64`, `I32`, and `I64`.
+    ///
     /// # Example
     ///
     /// Create a `tenferro_runtime::Tensor` and pretty-print it.
@@ -78,6 +98,8 @@ impl<T: Prettifiable> Pretty for T {
 
     /// Prettify a tenferro tensor.
     ///
+    /// Supported dtypes are `F32`, `F64`, `I32`, and `I64`.
+    ///
     /// # Example
     ///
     /// Create a `tenferro_runtime::Tensor` and obtain its prettified representation.
@@ -90,7 +112,7 @@ impl<T: Prettifiable> Pretty for T {
     /// let tensor = Tensor::from_vec_col_major(vec![20, 10, 2], (0..400).map(|x| x as f64).collect())?;
     /// let expected = String::from(
     ///     "\
-    ///     F64 Tensor • shape: [20, 10, 2]\n\
+    ///     Tensor • dtype: F64 • shape: [20, 10, 2]\n\
     ///     │\n\
     ///     ├╴[:, :, 0]\n\
     ///     │ ┌─────────────────────────────────────────────────────────────────────────────┐\n\
@@ -138,8 +160,9 @@ fn select_indices(num: usize) -> Vec<usize> {
 fn prettify<T: Prettifiable>(tensor: &T, string: &mut String) -> Result<(), Box<dyn Error>> {
     writeln!(
         string,
-        "{} • shape: {:?}",
+        "{} • dtype: {} • shape: {:?}",
         tensor.type_as_string(),
+        tensor.dtype_as_string(),
         tensor.shape()
     )?;
 
