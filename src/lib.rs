@@ -45,6 +45,24 @@ impl Prettifiable for Tensor {
     }
 }
 
+const ELLIPSIS: usize = usize::MAX;
+
+fn select_indices(dim_shape: usize) -> Vec<usize> {
+    if dim_shape >= 7 {
+        let mut x = Vec::with_capacity(7);
+        x.push(0);
+        x.push(1);
+        x.push(2);
+        x.push(ELLIPSIS);
+        x.push(dim_shape - 3);
+        x.push(dim_shape - 2);
+        x.push(dim_shape - 1);
+        x
+    } else {
+        (0..dim_shape).collect()
+    }
+}
+
 pub trait Prettify {
     fn prettify(&self) -> Result<String, Box<dyn Error>>;
 }
@@ -64,6 +82,17 @@ impl<T: Prettifiable> Prettify for T {
             0 => {
                 writeln!(x, "│ ┌─────────────┐")?;
                 writeln!(x, "│ │ {} │", self.get_as_string(&[])?)?;
+                writeln!(x, "╵ └─────────────┘")?;
+            },
+            1 => {
+                writeln!(x, "│ ┌─────────────┐")?;
+                for i in select_indices(self.shape()[0]) {
+                    if i == ELLIPSIS {
+                        writeln!(x, "│ │      ⋮      │")?;
+                    } else {
+                        writeln!(x, "│ │ {} │", self.get_as_string(&[i])?)?;
+                    }
+                }
                 writeln!(x, "╵ └─────────────┘")?;
             },
             _ => todo!()
