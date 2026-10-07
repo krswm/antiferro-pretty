@@ -43,17 +43,81 @@ impl Prettifiable for Tensor {
     }
 }
 
+/// Pretty-print your tenferro tensors.
+///
+/// This trait is implemented for the following structs.
+/// - `tenferro_runtime::TypedTensor`
+/// - `tenferro_runtime::Tensor`
 pub trait Pretty {
     fn show(&self) -> Result<(), Box<dyn Error>>;
     fn prettify(&self) -> Result<String, Box<dyn Error>>;
 }
 
 impl<T: Prettifiable> Pretty for T {
+    /// Pretty-print a tenferro tensor to stdout (terminal).
+    ///
+    /// Internally, this method uses [prettify].
+    ///
+    /// # Example
+    ///
+    /// Create a `tenferro_runtime::Tensor` and pretty-print it.
+    ///
+    /// ```
+    /// use tenferro_runtime::Tensor;
+    ///
+    /// use tenferro_pretty::Pretty;
+    ///
+    /// let tensor = Tensor::from_vec_col_major(vec![20, 10, 2], (0..400).map(|x| x as f64).collect())?;
+    /// tensor.show()?;
+    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// ```
     fn show(&self) -> Result<(), Box<dyn Error>> {
         print!("{}", self.prettify()?);
         Ok(())
     }
 
+    /// Prettify a tenferro tensor.
+    ///
+    /// # Example
+    ///
+    /// Create a `tenferro_runtime::Tensor` and obtain its prettified representation.
+    ///
+    /// ```
+    /// use tenferro_runtime::Tensor;
+    ///
+    /// use tenferro_pretty::Pretty;
+    ///
+    /// let tensor = Tensor::from_vec_col_major(vec![20, 10, 2], (0..400).map(|x| x as f64).collect())?;
+    /// let expected = String::from(
+    ///     "\
+    ///     F64 Tensor • shape: [20, 10, 2]\n\
+    ///     │\n\
+    ///     ├╴[:, :, 0]\n\
+    ///     │ ┌─────────────────────────────────────────────────────────────────────────────┐\n\
+    ///     │ │ +0.000e0    +2.000e1    +4.000e1     ⋯  +1.400e2    +1.600e2    +1.800e2    │\n\
+    ///     │ │ +1.000e0    +2.100e1    +4.100e1     ⋯  +1.410e2    +1.610e2    +1.810e2    │\n\
+    ///     │ │ +2.000e0    +2.200e1    +4.200e1     ⋯  +1.420e2    +1.620e2    +1.820e2    │\n\
+    ///     │ │      ⋮           ⋮           ⋮               ⋮           ⋮           ⋮      │\n\
+    ///     │ │ +1.700e1    +3.700e1    +5.700e1     ⋯  +1.570e2    +1.770e2    +1.970e2    │\n\
+    ///     │ │ +1.800e1    +3.800e1    +5.800e1     ⋯  +1.580e2    +1.780e2    +1.980e2    │\n\
+    ///     │ │ +1.900e1    +3.900e1    +5.900e1     ⋯  +1.590e2    +1.790e2    +1.990e2    │\n\
+    ///     │ └─────────────────────────────────────────────────────────────────────────────┘\n\
+    ///     │\n\
+    ///     ├╴[:, :, 1]\n\
+    ///     │ ┌─────────────────────────────────────────────────────────────────────────────┐\n\
+    ///     │ │ +2.000e2    +2.200e2    +2.400e2     ⋯  +3.400e2    +3.600e2    +3.800e2    │\n\
+    ///     │ │ +2.010e2    +2.210e2    +2.410e2     ⋯  +3.410e2    +3.610e2    +3.810e2    │\n\
+    ///     │ │ +2.020e2    +2.220e2    +2.420e2     ⋯  +3.420e2    +3.620e2    +3.820e2    │\n\
+    ///     │ │      ⋮           ⋮           ⋮               ⋮           ⋮           ⋮      │\n\
+    ///     │ │ +2.170e2    +2.370e2    +2.570e2     ⋯  +3.570e2    +3.770e2    +3.970e2    │\n\
+    ///     │ │ +2.180e2    +2.380e2    +2.580e2     ⋯  +3.580e2    +3.780e2    +3.980e2    │\n\
+    ///     │ │ +2.190e2    +2.390e2    +2.590e2     ⋯  +3.590e2    +3.790e2    +3.990e2    │\n\
+    ///     ╵ └─────────────────────────────────────────────────────────────────────────────┘\n\
+    ///     ",
+    /// );
+    /// assert_eq!(tensor.prettify()?, expected);
+    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// ```
     fn prettify(&self) -> Result<String, Box<dyn Error>> {
         let mut string = String::new();
         prettify(self, &mut string)?;
