@@ -292,7 +292,7 @@ mod tests {
         let tensor = TypedTensor::<f64>::from_vec_col_major(vec![], vec![0.0])?;
         let expected = String::from(
             "\
-            TypedTensor • shape: []\n\
+            TypedTensor • dtype: F64 • shape: []\n\
             │ ┌─────────────┐\n\
             │ │ +0.000e0    │\n\
             ╵ └─────────────┘\n\
@@ -308,7 +308,7 @@ mod tests {
         let tensor = Tensor::from_vec_col_major(vec![], vec![0.0])?;
         let expected = String::from(
             "\
-            F64 Tensor • shape: []\n\
+            Tensor • dtype: F64 • shape: []\n\
             │ ┌─────────────┐\n\
             │ │ +0.000e0    │\n\
             ╵ └─────────────┘\n\
@@ -322,7 +322,7 @@ mod tests {
     #[test]
     fn test_0() -> Result<(), Box<dyn Error>> {
         let tensor = Tensor::from_vec_col_major(vec![0], Vec::<f64>::new())?;
-        let expected = String::from("F64 Tensor • shape: [0]\n");
+        let expected = String::from("Tensor • dtype: F64 • shape: [0]\n");
         assert_eq!(tensor.prettify()?, expected);
         Ok(())
     }
@@ -332,7 +332,7 @@ mod tests {
         let tensor = Tensor::from_vec_col_major(vec![7], (0..7).map(|x| x as f64).collect())?;
         let expected = String::from(
             "\
-            F64 Tensor • shape: [7]\n\
+            Tensor • dtype: F64 • shape: [7]\n\
             │ ┌─────────────┐\n\
             │ │ +0.000e0    │\n\
             │ │ +1.000e0    │\n\
@@ -354,7 +354,7 @@ mod tests {
         let tensor = Tensor::from_vec_col_major(vec![2], (0..2).map(|x| x as f64).collect())?;
         let expected = String::from(
             "\
-            F64 Tensor • shape: [2]\n\
+            Tensor • dtype: F64 • shape: [2]\n\
             │ ┌─────────────┐\n\
             │ │ +0.000e0    │\n\
             │ │ +1.000e0    │\n\
@@ -369,7 +369,7 @@ mod tests {
     #[test]
     fn test_20() -> Result<(), Box<dyn Error>> {
         let tensor = Tensor::from_vec_col_major(vec![2, 0], Vec::<f64>::new())?;
-        let expected = String::from("F64 Tensor • shape: [2, 0]\n");
+        let expected = String::from("Tensor • dtype: F64 • shape: [2, 0]\n");
         assert_eq!(tensor.prettify()?, expected);
         Ok(())
     }
@@ -379,7 +379,7 @@ mod tests {
         let tensor = Tensor::from_vec_col_major(vec![7, 7], (0..49).map(|x| x as f64).collect())?;
         let expected = String::from(
             "\
-            F64 Tensor • shape: [7, 7]\n\
+            Tensor • dtype: F64 • shape: [7, 7]\n\
             │ ┌─────────────────────────────────────────────────────────────────────────────┐\n\
             │ │ +0.000e0    +7.000e0    +1.400e1     ⋯  +2.800e1    +3.500e1    +4.200e1    │\n\
             │ │ +1.000e0    +8.000e0    +1.500e1     ⋯  +2.900e1    +3.600e1    +4.300e1    │\n\
@@ -401,7 +401,7 @@ mod tests {
         let tensor = Tensor::from_vec_col_major(vec![7, 2], (0..14).map(|x| x as f64).collect())?;
         let expected = String::from(
             "\
-            F64 Tensor • shape: [7, 2]\n\
+            Tensor • dtype: F64 • shape: [7, 2]\n\
             │ ┌─────────────────────────┐\n\
             │ │ +0.000e0    +7.000e0    │\n\
             │ │ +1.000e0    +8.000e0    │\n\
@@ -423,7 +423,7 @@ mod tests {
         let tensor = Tensor::from_vec_col_major(vec![2, 7], (0..14).map(|x| x as f64).collect())?;
         let expected = String::from(
             "\
-            F64 Tensor • shape: [2, 7]\n\
+            Tensor • dtype: F64 • shape: [2, 7]\n\
             │ ┌─────────────────────────────────────────────────────────────────────────────┐\n\
             │ │ +0.000e0    +2.000e0    +4.000e0     ⋯  +8.000e0    +1.000e1    +1.200e1    │\n\
             │ │ +1.000e0    +3.000e0    +5.000e0     ⋯  +9.000e0    +1.100e1    +1.300e1    │\n\
@@ -440,7 +440,7 @@ mod tests {
         let tensor = Tensor::from_vec_col_major(vec![2, 2], (0..4).map(|x| x as f64).collect())?;
         let expected = String::from(
             "\
-            F64 Tensor • shape: [2, 2]\n\
+            Tensor • dtype: F64 • shape: [2, 2]\n\
             │ ┌─────────────────────────┐\n\
             │ │ +0.000e0    +2.000e0    │\n\
             │ │ +1.000e0    +3.000e0    │\n\
@@ -455,7 +455,7 @@ mod tests {
     #[test]
     fn test_220() -> Result<(), Box<dyn Error>> {
         let tensor = Tensor::from_vec_col_major(vec![2, 2, 0], Vec::<f64>::new())?;
-        let expected = String::from("F64 Tensor • shape: [2, 2, 0]\n");
+        let expected = String::from("Tensor • dtype: F64 • shape: [2, 2, 0]\n");
         assert_eq!(tensor.prettify()?, expected);
         Ok(())
     }
@@ -466,7 +466,7 @@ mod tests {
             Tensor::from_vec_col_major(vec![2, 2, 7], (0..28).map(|x| x as f64).collect())?;
         let expected = String::from(
             "\
-            F64 Tensor • shape: [2, 2, 7]\n\
+            Tensor • dtype: F64 • shape: [2, 2, 7]\n\
             │\n\
             ├╴[:, :, 0]\n\
             │ ┌─────────────────────────┐\n\
@@ -515,7 +515,7 @@ mod tests {
         let tensor = Tensor::from_vec_col_major(vec![2, 2, 2], (0..8).map(|x| x as f64).collect())?;
         let expected = String::from(
             "\
-            F64 Tensor • shape: [2, 2, 2]\n\
+            Tensor • dtype: F64 • shape: [2, 2, 2]\n\
             │\n\
             ├╴[:, :, 0]\n\
             │ ┌─────────────────────────┐\n\
@@ -538,7 +538,7 @@ mod tests {
     #[test]
     fn test_2220() -> Result<(), Box<dyn Error>> {
         let tensor = Tensor::from_vec_col_major(vec![2, 2, 2, 0], Vec::<f64>::new())?;
-        let expected = String::from("F64 Tensor • shape: [2, 2, 2, 0]\n");
+        let expected = String::from("Tensor • dtype: F64 • shape: [2, 2, 2, 0]\n");
         assert_eq!(tensor.prettify()?, expected);
         Ok(())
     }
@@ -549,7 +549,7 @@ mod tests {
             Tensor::from_vec_col_major(vec![2, 2, 2, 7], (0..56).map(|x| x as f64).collect())?;
         let expected = String::from(
             "\
-            F64 Tensor • shape: [2, 2, 2, 7]\n\
+            Tensor • dtype: F64 • shape: [2, 2, 2, 7]\n\
             │\n\
             ├╴[:, :, 0, 0]\n\
             │ ┌─────────────────────────┐\n\
@@ -635,7 +635,7 @@ mod tests {
             Tensor::from_vec_col_major(vec![2, 2, 2, 2], (0..16).map(|x| x as f64).collect())?;
         let expected = String::from(
             "\
-            F64 Tensor • shape: [2, 2, 2, 2]\n\
+            Tensor • dtype: F64 • shape: [2, 2, 2, 2]\n\
             │\n\
             ├╴[:, :, 0, 0]\n\
             │ ┌─────────────────────────┐\n\
