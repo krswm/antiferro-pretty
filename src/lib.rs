@@ -8,7 +8,6 @@ use tenferro_runtime::{DType, Tensor, TensorScalar, TypedTensor};
 pub trait Prettifiable {
     fn type_as_string(&self) -> String;
     fn shape(&self) -> &[usize];
-    fn get_as_string(&self, indices: &[usize]) -> Result<String, Box<dyn Error>>;
     fn value_as_string(&self, offset: usize) -> Result<String, Box<dyn Error>>;
 }
 
@@ -19,10 +18,6 @@ impl<T: LowerExp + TensorScalar> Prettifiable for TypedTensor<T> {
 
     fn shape(&self) -> &[usize] {
         self.shape()
-    }
-
-    fn get_as_string(&self, indices: &[usize]) -> Result<String, Box<dyn Error>> {
-        Ok(format!("{:<+11.3e}", *self.get(indices)?))
     }
 
     fn value_as_string(&self, offset: usize) -> Result<String, Box<dyn Error>> {
@@ -39,16 +34,6 @@ impl Prettifiable for Tensor {
         self.shape()
     }
 
-    fn get_as_string(&self, indices: &[usize]) -> Result<String, Box<dyn Error>> {
-        match self.dtype() {
-            DType::F32 => Ok(format!("{:<+11.3e}", *self.get::<f32>(indices)?)),
-            DType::F64 => Ok(format!("{:<+11.3e}", *self.get::<f64>(indices)?)),
-            DType::I32 => Ok(format!("{:<+11.3e}", *self.get::<i32>(indices)?)),
-            DType::I64 => Ok(format!("{:<+11.3e}", *self.get::<i64>(indices)?)),
-            _ => Err(format!("dtype unsupported by prettify: {:?}", self.dtype()).into()),
-        }
-    }
-
     fn value_as_string(&self, offset: usize) -> Result<String, Box<dyn Error>> {
         match self.dtype() {
             DType::F32 => Ok(format!("{:<+11.3e}", self.as_slice::<f32>()?[offset])),
@@ -57,6 +42,24 @@ impl Prettifiable for Tensor {
             DType::I64 => Ok(format!("{:<+11.3e}", self.as_slice::<i64>()?[offset])),
             _ => Err(format!("dtype unsupported by prettify: {:?}", self.dtype()).into()),
         }
+    }
+}
+
+pub trait Pretty {
+    fn show(&self) -> Result<(), Box<dyn Error>>;
+    fn prettify(&self) -> Result<String, Box<dyn Error>>;
+}
+
+impl<T: Prettifiable> Pretty for T {
+    fn show(&self) -> Result<(), Box<dyn Error>> {
+        print!("{}", self.prettify()?);
+        Ok(())
+    }
+
+    fn prettify(&self) -> Result<String, Box<dyn Error>> {
+        let mut x = String::new();
+        prettify(self, &mut x)?;
+        Ok(x)
     }
 }
 
@@ -78,140 +81,102 @@ fn select_indices(dim_shape: usize) -> Vec<usize> {
     }
 }
 
-pub trait Prettify {
-    fn prettify(&self) -> Result<String, Box<dyn Error>>;
+fn prettify<T: Prettifiable>(tensor: &T, x: &mut String) -> Result<(), Box<dyn Error>> {
+    writeln!(
+        x,
+        "{} • shape: {:?}",
+        tensor.type_as_string(),
+        tensor.shape()
+    )?;
+
+    match tensor.shape().len() {
+        0 => {
+            prettify_matrix(tensor, 1, 1, 0, true, x)?;
+        }
+        1 => {
+            prettify_matrix(tensor, tensor.shape()[0], 1, 0, true, x)?;
+        }
+        2 => {
+            prettify_matrix(tensor, tensor.shape()[0], tensor.shape()[1], 0, true, x)?;
+        }
+        3 => {
+            for k in select_indices(tensor.shape()[2]) {
+                if k != ELLIPSIS {
+                    writeln!(x, "│")?;
+                    writeln!(x, "├╴[:, :, {}]", k)?;
+                    prettify_matrix(
+                        tensor,
+                        tensor.shape()[0],
+                        tensor.shape()[1],
+                        tensor.shape()[0] * tensor.shape()[1] * k,
+                        k == tensor.shape()[2] - 1,
+                        x,
+                    )?;
+                }
+            }
+        }
+        _ => todo!(),
+    }
+
+    Ok(())
 }
 
-impl<T: Prettifiable> Prettify for T {
-    fn prettify(&self) -> Result<String, Box<dyn Error>> {
-        let mut x = String::new();
-
-        writeln!(
-            x,
-            "{} • shape: {:?}",
-            self.type_as_string(),
-            self.shape()
-        )?;
-
-        match self.shape().len() {
-            0 => {
-                writeln!(x, "│ ┌─────────────┐")?;
-                writeln!(x, "│ │ {} │", self.get_as_string(&[])?)?;
-                writeln!(x, "╵ └─────────────┘")?;
-            },
-            1 => {
-                writeln!(x, "│ ┌─────────────┐")?;
-                for i in select_indices(self.shape()[0]) {
-                    if i == ELLIPSIS {
-                        writeln!(x, "│ │      ⋮      │")?;
-                    } else {
-                        writeln!(x, "│ │ {} │", self.get_as_string(&[i])?)?;
-                    }
-                }
-                writeln!(x, "╵ └─────────────┘")?;
-            },
-            2 => {
-                write!(x, "│ ┌")?;
-                for j in select_indices(self.shape()[1]) {
-                    if j == ELLIPSIS {
-                        write!(x, "────")?;
-                    } else {
-                        write!(x, "────────────")?;
-                    }
-                }
-                writeln!(x, "─┐")?;
-
-                for i in select_indices(self.shape()[0]) {
-                    write!(x, "│ │")?;
-                    if i == ELLIPSIS {
-                        for j in select_indices(self.shape()[1]) {
-                            if j == ELLIPSIS {
-                                write!(x, "    ")?;
-                            } else {
-                                write!(x, "      ⋮     ")?;
-                            }
-                        }
-                    } else {
-                        for j in select_indices(self.shape()[1]) {
-                            if j == ELLIPSIS {
-                                write!(x, "  ⋯ ")?;
-                            } else {
-                                write!(x, " {}", self.get_as_string(&[i, j])?)?;
-                            }
-                        }
-                    }
-                    writeln!(x, " │")?;
-                }
-
-                write!(x, "╵ └")?;
-                for j in select_indices(self.shape()[1]) {
-                    if j == ELLIPSIS {
-                        write!(x, "────")?;
-                    } else {
-                        write!(x, "────────────")?;
-                    }
-                }
-                writeln!(x, "─┘")?;
-                // TDD is powerful
-            },
-            3 => {
-                for k in select_indices(self.shape()[2]) {
-                    if k != ELLIPSIS {
-                        writeln!(x, "│")?;
-                        writeln!(x, "├╴[:, :, {}]", k)?;
-                        write!(x, "│ ┌")?;
-                        for j in select_indices(self.shape()[1]) {
-                            if j == ELLIPSIS {
-                                write!(x, "────")?;
-                            } else {
-                                write!(x, "────────────")?;
-                            }
-                        }
-                        writeln!(x, "─┐")?;
-
-                        for i in select_indices(self.shape()[0]) {
-                            write!(x, "│ │")?;
-                            if i == ELLIPSIS {
-                                for j in select_indices(self.shape()[1]) {
-                                    if j == ELLIPSIS {
-                                        write!(x, "    ")?;
-                                    } else {
-                                        write!(x, "      ⋮     ")?;
-                                    }
-                                }
-                            } else {
-                                for j in select_indices(self.shape()[1]) {
-                                    if j == ELLIPSIS {
-                                        write!(x, "  ⋯ ")?;
-                                    } else {
-                                        write!(x, " {}", self.get_as_string(&[i, j, k])?)?;
-                                    }
-                                }
-                            }
-                            writeln!(x, " │")?;
-                        }
-
-                        if k == self.shape()[2] - 1 {
-                            write!(x, "╵ └")?;
-                        } else {
-                            write!(x, "│ └")?;
-                        }
-                        for j in select_indices(self.shape()[1]) {
-                            if j == ELLIPSIS {
-                                write!(x, "────")?;
-                            } else {
-                                write!(x, "────────────")?;
-                            }
-                        }
-                        writeln!(x, "─┘")?;
-                    }
-                }
-            },
-            _ => todo!()
+fn prettify_matrix<T: Prettifiable>(
+    tensor: &T,
+    shape_0: usize,
+    shape_1: usize,
+    offset: usize,
+    is_last_matrix: bool,
+    x: &mut String,
+) -> Result<(), Box<dyn Error>> {
+    write!(x, "│ ┌")?;
+    for j in select_indices(shape_1) {
+        if j == ELLIPSIS {
+            write!(x, "────")?;
+        } else {
+            write!(x, "────────────")?;
         }
-
-        Ok(x)
     }
+    writeln!(x, "─┐")?;
+
+    for i in select_indices(shape_0) {
+        write!(x, "│ │")?;
+        if i == ELLIPSIS {
+            for j in select_indices(shape_1) {
+                if j == ELLIPSIS {
+                    write!(x, "    ")?;
+                } else {
+                    write!(x, "      ⋮     ")?;
+                }
+            }
+        } else {
+            for j in select_indices(shape_1) {
+                if j == ELLIPSIS {
+                    write!(x, "  ⋯ ")?;
+                } else {
+                    let fine_offset = i + shape_0 * j;
+                    write!(x, " {}", tensor.value_as_string(offset + fine_offset)?)?;
+                }
+            }
+        }
+        writeln!(x, " │")?;
+    }
+
+    if is_last_matrix {
+        write!(x, "╵ └")?;
+    } else {
+        write!(x, "│ └")?;
+    }
+    for j in select_indices(shape_1) {
+        if j == ELLIPSIS {
+            write!(x, "────")?;
+        } else {
+            write!(x, "────────────")?;
+        }
+    }
+    writeln!(x, "─┘")?;
+
+    Ok(())
 }
 
 #[cfg(test)]
