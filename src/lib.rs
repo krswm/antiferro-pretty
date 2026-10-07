@@ -143,6 +143,10 @@ fn prettify<T: Prettifiable>(tensor: &T, string: &mut String) -> Result<(), Box<
         tensor.shape()
     )?;
 
+    if tensor.shape().iter().product::<usize>() == 0 {
+        return Ok(());
+    }
+
     match tensor.shape().len() {
         0 => {
             prettify_matrix(tensor, 1, 1, 0, true, string)?;
