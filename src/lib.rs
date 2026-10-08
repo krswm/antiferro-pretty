@@ -67,14 +67,9 @@ impl Prettifiable for Tensor {
 /// - `tenferro_runtime::TypedTensor`
 /// - `tenferro_runtime::Tensor`
 pub trait Pretty {
-    fn show(&self) -> Result<(), Box<dyn Error>>;
-    fn prettify(&self) -> Result<String, Box<dyn Error>>;
-}
-
-impl<T: Prettifiable> Pretty for T {
     /// Pretty-print a tenferro tensor to stdout (terminal).
     ///
-    /// Internally, this method uses [prettify].
+    /// Internally, this method uses [`Pretty::prettify`].
     ///
     /// Supported dtypes are `F32`, `F64`, `I32`, and `I64`.
     ///
@@ -91,10 +86,7 @@ impl<T: Prettifiable> Pretty for T {
     /// tensor.show()?;
     /// # Ok::<(), Box<dyn std::error::Error>>(())
     /// ```
-    fn show(&self) -> Result<(), Box<dyn Error>> {
-        print!("{}", self.prettify()?);
-        Ok(())
-    }
+    fn show(&self) -> Result<(), Box<dyn Error>>;
 
     /// Prettify a tenferro tensor.
     ///
@@ -140,6 +132,15 @@ impl<T: Prettifiable> Pretty for T {
     /// assert_eq!(tensor.prettify()?, expected);
     /// # Ok::<(), Box<dyn std::error::Error>>(())
     /// ```
+    fn prettify(&self) -> Result<String, Box<dyn Error>>;
+}
+
+impl<T: Prettifiable> Pretty for T {
+    fn show(&self) -> Result<(), Box<dyn Error>> {
+        print!("{}", self.prettify()?);
+        Ok(())
+    }
+
     fn prettify(&self) -> Result<String, Box<dyn Error>> {
         let mut string = String::new();
         prettify(self, &mut string)?;
