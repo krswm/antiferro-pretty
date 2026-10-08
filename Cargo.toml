@@ -1,5 +1,5 @@
 [package]
-name = "tenferro-pretty"
+name = "antiferro-pretty"
 edition = "2024"
 
 [dependencies]

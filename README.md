@@ -26,17 +26,36 @@ This crate supports the following dtypes:
 
 License: MIT OR Apache-2.0
 
+*antiferro* is a wordplay of *tenferro* and *antiferromagnetism* (I major condensed matter physics.).
+I named it so in order to avoid possible crate name collision in the future with the official `tenferro_*` crates.
+
 ## Example
 
 Create a `tenferro_runtime::Tensor` and pretty-print it.
 
+`Cargo.toml`:
+
+```toml
+# …
+
+antiferro-pretty = { git = "https://github.com/krswm/antiferro-pretty" }
+
+# …
+```
+
+`src/main.rs`:
+
 ```rust
+// …
+
 use tenferro_runtime::Tensor;
 
-use tenferro_pretty::Pretty;
+use antiferro_pretty::Pretty;
 
 let tensor = Tensor::from_vec_col_major(vec![20, 10, 2], (0..400).map(|x| x as f64).collect())?;
 tensor.show()?;
+
+// …
 ```
 
 You will see the following in your stdout (terminal).
