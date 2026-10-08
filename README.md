@@ -27,7 +27,7 @@ This crate supports the following dtypes:
 License: MIT OR Apache-2.0
 
 *antiferro* is a wordplay of *tenferro* and *antiferromagnetism* (I major condensed matter physics.).
-I named it so in order to avoid possible crate name collision in the future with the official `tenferro_*` crates.
+I named it so in order to avoid possible namespace collision with the official `tenferro-*` packages.
 
 ## Example
 
