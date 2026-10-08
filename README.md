@@ -38,7 +38,7 @@ Create a `tenferro_runtime::Tensor` and pretty-print it.
 ```toml
 # …
 
-antiferro-pretty = { git = "https://github.com/krswm/antiferro-pretty" }
+antiferro-pretty = { git = "https://github.com/krswm/antiferro-pretty.git" }
 
 # …
 ```
