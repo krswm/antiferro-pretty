@@ -1,6 +1,7 @@
 [package]
 name = "antiferro-pretty"
 edition = "2024"
+license = "MIT or Apache-2.0"
 
 [dependencies]
 tenferro-runtime = "0.7"
