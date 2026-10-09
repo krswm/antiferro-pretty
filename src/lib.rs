@@ -64,8 +64,8 @@ impl Prettifiable for Tensor {
 /// Pretty-print your tenferro tensors.
 ///
 /// This trait is implemented for the following structs.
-/// - `tenferro_runtime::TypedTensor`
-/// - `tenferro_runtime::Tensor`
+/// - [`tenferro_runtime::TypedTensor`]
+/// - [`tenferro_runtime::Tensor`]
 pub trait Pretty {
     /// Pretty-print a tenferro tensor to stdout (terminal).
     ///
