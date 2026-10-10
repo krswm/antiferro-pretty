@@ -9,18 +9,11 @@ This crate supports the following tenferro tensor structs:
 - `tenferro_runtime::TypedTensor`
 - `tenferro_runtime::Tensor`
 
-This crate supports the following dtypes:
-
-- `F32`
-- `F64`
-- `I32`
-- `I64`
-
 > [!NOTE]
 > This crate is **not** a part of the official tenferro project.
 
 > [!WARNING]
-> **Currently, everything of this crate (including public API and git URL) is subject to change.**
+> **Currently, everything of this crate (including public API, crate name, and git URL) is subject to change.**
 >
 > Use this crate at your own risk.
 
@@ -52,8 +45,8 @@ use tenferro_runtime::Tensor;
 
 use antiferro_pretty::Pretty;
 
-let tensor = Tensor::from_vec_col_major(vec![20, 10, 2], (0..400).map(|x| x as f64).collect())?;
-tensor.show()?;
+let tensor = Tensor::from_vec_col_major(vec![20, 10, 2], (0..400).map(|x| x as f64).collect()).unwrap();
+tensor.print().unwrap();
 
 // …
 ```
@@ -64,7 +57,7 @@ Output:
 
 ## Credits
 
-- [PyTorch](https://github.com/pytorch/pytorch) and [Julia](https://github.com/JuliaLang/julia) for the inspiration of tensor pretty-printing.
+- [NumPy](https://github.com/numpy/numpy), [PyTorch](https://github.com/pytorch/pytorch), and [Julia](https://github.com/JuliaLang/julia) inspired me for tensor pretty-printing.
 - [tenferro](https://github.com/tensor4all/tenferro-rs) for providing me a great tensor library for Rust.
 
 ## Developments
