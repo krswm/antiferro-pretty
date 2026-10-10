@@ -41,6 +41,7 @@ impl_formattable_for_typed_tensor!(f32, "F32", "{:─<11}", "{:<+11.3e}");
 impl_formattable_for_typed_tensor!(f64, "F64", "{:─<11}", "{:<+11.3e}");
 impl_formattable_for_typed_tensor!(i32, "I32", "{:─<11}", "{:<+11.3e}");
 impl_formattable_for_typed_tensor!(i64, "I64", "{:─<11}", "{:<+11.3e}");
+impl_formattable_for_typed_tensor!(bool, "BOOL", "{:─<5}", "{:5}");
 
 impl Formattable for Tensor {
     fn type_as_string(&self) -> String {
@@ -61,6 +62,7 @@ impl Formattable for Tensor {
             DType::F64 => format!("{:─<11}", ""),
             DType::I32 => format!("{:─<11}", ""),
             DType::I64 => format!("{:─<11}", ""),
+            DType::Bool => format!("{:─<5}", ""),
             dtype => panic!("dtype unsupported by pretty: {:?}", dtype),
         }
     }
@@ -71,6 +73,7 @@ impl Formattable for Tensor {
             DType::F64 => Ok(format!("{:<+11.3e}", self.as_slice::<f64>()?[offset])),
             DType::I32 => Ok(format!("{:<+11.3e}", self.as_slice::<i32>()?[offset])),
             DType::I64 => Ok(format!("{:<+11.3e}", self.as_slice::<i64>()?[offset])),
+            DType::Bool => Ok(format!("{:5}", self.as_slice::<bool>()?[offset])),
             dtype => Err(format!("dtype unsupported by pretty: {:?}", dtype).into()),
         }
     }
