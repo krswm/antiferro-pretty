@@ -104,8 +104,6 @@ pub trait Pretty {
     ///
     /// Internally, this method uses [`Pretty::format`].
     ///
-    /// Supported dtypes are `F32`, `F64`, `I32`, and `I64`.
-    ///
     /// # Example
     ///
     /// Create a `tenferro_runtime::Tensor` and pretty-print it.
@@ -121,8 +119,6 @@ pub trait Pretty {
     fn print(&self) -> Result<(), Box<dyn Error>>;
 
     /// Prettify a tenferro tensor.
-    ///
-    /// Supported dtypes are `F32`, `F64`, `I32`, and `I64`.
     ///
     /// # Example
     ///
