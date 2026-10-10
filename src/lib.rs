@@ -82,9 +82,8 @@ pub trait Pretty {
     ///
     /// use antiferro_pretty::Pretty;
     ///
-    /// let tensor = Tensor::from_vec_col_major(vec![20, 10, 2], (0..400).map(|x| x as f64).collect())?;
-    /// tensor.print()?;
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// let tensor = Tensor::from_vec_col_major(vec![20, 10, 2], (0..400).map(|x| x as f64).collect()).unwrap();
+    /// tensor.print().unwrap();
     /// ```
     fn print(&self) -> Result<(), Box<dyn Error>>;
 
@@ -101,7 +100,7 @@ pub trait Pretty {
     ///
     /// use antiferro_pretty::Pretty;
     ///
-    /// let tensor = Tensor::from_vec_col_major(vec![20, 10, 2], (0..400).map(|x| x as f64).collect())?;
+    /// let tensor = Tensor::from_vec_col_major(vec![20, 10, 2], (0..400).map(|x| x as f64).collect()).unwrap();
     /// let expected = String::from(
     ///     "\
     ///     Tensor • dtype: F64 • shape: [20, 10, 2]\n\
@@ -129,8 +128,7 @@ pub trait Pretty {
     ///     ╵ └─────────────────────────────────────────────────────────────────────────────┘\n\
     ///     ",
     /// );
-    /// assert_eq!(tensor.format()?, expected);
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// assert_eq!(tensor.format().unwrap(), expected);
     /// ```
     fn format(&self) -> Result<String, Box<dyn Error>>;
 }
