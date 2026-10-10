@@ -4,4 +4,5 @@ edition = "2024"
 license = "MIT or Apache-2.0"
 
 [dependencies]
+num-complex = "0.4"
 tenferro-runtime = "0.7"
