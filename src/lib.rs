@@ -1,15 +1,17 @@
-use std::error::Error;
+//! Pretty-print your tenferro tensors.
+
 use std::fmt::Write;
 
 use num_complex::Complex;
 use tenferro_runtime::{DType, Tensor, TypedTensor};
+use tenferro_tensor::Error;
 
 trait Formattable {
     fn type_as_string(&self) -> String;
     fn dtype_as_string(&self) -> String;
     fn shape(&self) -> &[usize];
     fn vertical_line(&self) -> String;
-    fn value_as_string(&self, offset: usize) -> Result<String, Box<dyn Error>>;
+    fn value_as_string(&self, offset: usize) -> Result<String, Error>;
 }
 
 // `{:+23.3e}`: `num_complex::Complex` does not support `<` (left-adjust).
@@ -33,7 +35,7 @@ macro_rules! impl_formattable_for_typed_tensor {
                 format!($vertical_line_format, "")
             }
 
-            fn value_as_string(&self, offset: usize) -> Result<String, Box<dyn Error>> {
+            fn value_as_string(&self, offset: usize) -> Result<String, Error> {
                 Ok(format!($value_as_string_format, self.as_slice()?[offset]))
             }
         }
@@ -70,11 +72,11 @@ impl Formattable for Tensor {
             DType::Bool => format!("{:─<5}", ""),
             DType::C32 => format!("{:─<23}", ""),
             DType::C64 => format!("{:─<23}", ""),
-            dtype => panic!("dtype unsupported by pretty: {:?}", dtype),
+            dtype => panic!("unsupported dtype: {:?}", dtype),
         }
     }
 
-    fn value_as_string(&self, offset: usize) -> Result<String, Box<dyn Error>> {
+    fn value_as_string(&self, offset: usize) -> Result<String, Error> {
         match self.dtype() {
             DType::F32 => Ok(format!("{:<+11.3e}", self.as_slice::<f32>()?[offset])),
             DType::F64 => Ok(format!("{:<+11.3e}", self.as_slice::<f64>()?[offset])),
@@ -89,13 +91,11 @@ impl Formattable for Tensor {
                 "{:+23.3e}",
                 self.as_slice::<Complex<f64>>()?[offset]
             )),
-            dtype => Err(format!("dtype unsupported by pretty: {:?}", dtype).into()),
+            dtype => panic!("unsupported dtype: {:?}", dtype),
         }
     }
 }
 
-/// Pretty-print your tenferro tensors.
-///
 /// This trait is implemented for the following structs.
 /// - [`tenferro_runtime::TypedTensor`]
 /// - [`tenferro_runtime::Tensor`]
@@ -116,7 +116,7 @@ pub trait Pretty {
     /// let tensor = Tensor::from_vec_col_major(vec![20, 10, 2], (0..400).map(|x| x as f64).collect()).unwrap();
     /// tensor.print().unwrap();
     /// ```
-    fn print(&self) -> Result<(), Box<dyn Error>>;
+    fn print(&self) -> Result<(), Error>;
 
     /// Prettify a tenferro tensor.
     ///
@@ -159,16 +159,16 @@ pub trait Pretty {
     /// );
     /// assert_eq!(tensor.format().unwrap(), expected);
     /// ```
-    fn format(&self) -> Result<String, Box<dyn Error>>;
+    fn format(&self) -> Result<String, Error>;
 }
 
 impl<T: Formattable> Pretty for T {
-    fn print(&self) -> Result<(), Box<dyn Error>> {
+    fn print(&self) -> Result<(), Error> {
         print!("{}", self.format()?);
         Ok(())
     }
 
-    fn format(&self) -> Result<String, Box<dyn Error>> {
+    fn format(&self) -> Result<String, Error> {
         let mut string = String::new();
         format(self, &mut string)?;
         Ok(string)
@@ -185,14 +185,15 @@ fn select_indices(num: usize) -> Vec<usize> {
     }
 }
 
-fn format<T: Formattable>(tensor: &T, string: &mut String) -> Result<(), Box<dyn Error>> {
+fn format<T: Formattable>(tensor: &T, string: &mut String) -> Result<(), Error> {
     writeln!(
         string,
         "{} • dtype: {} • shape: {:?}",
         tensor.type_as_string(),
         tensor.dtype_as_string(),
         tensor.shape()
-    )?;
+    )
+    .unwrap();
 
     if tensor.shape().iter().product::<usize>() == 0 {
         return Ok(());
@@ -241,12 +242,12 @@ fn format<T: Formattable>(tensor: &T, string: &mut String) -> Result<(), Box<dyn
             };
 
             for (i, indices) in selected.iter().enumerate() {
-                writeln!(string, "│")?;
-                write!(string, "├╴[:, :")?;
+                writeln!(string, "│").unwrap();
+                write!(string, "├╴[:, :").unwrap();
                 for index in indices {
-                    write!(string, ", {index}")?;
+                    write!(string, ", {index}").unwrap();
                 }
-                writeln!(string, "]")?;
+                writeln!(string, "]").unwrap();
 
                 let offset = {
                     let mut offset = 0;
@@ -283,61 +284,59 @@ fn format_matrix<T: Formattable>(
     offset: usize,
     is_last_matrix: bool,
     string: &mut String,
-) -> Result<(), Box<dyn Error>> {
-    write!(string, "│ ┌")?;
+) -> Result<(), Error> {
+    write!(string, "│ ┌").unwrap();
     for col in select_indices(num_cols) {
         if col == OMIT {
-            write!(string, "────")?;
+            write!(string, "────").unwrap();
         } else {
-            write!(string, "─{}", tensor.vertical_line())?;
+            write!(string, "─{}", tensor.vertical_line()).unwrap();
         }
     }
-    writeln!(string, "─┐")?;
+    writeln!(string, "─┐").unwrap();
 
     for row in select_indices(num_rows) {
-        write!(string, "│ │")?;
+        write!(string, "│ │").unwrap();
         if row == OMIT {
             for col in select_indices(num_cols) {
                 if col == OMIT {
-                    write!(string, "    ")?;
+                    write!(string, "    ").unwrap();
                 } else {
-                    write!(string, "      ⋮     ")?;
+                    write!(string, "      ⋮     ").unwrap();
                 }
             }
         } else {
             for col in select_indices(num_cols) {
                 if col == OMIT {
-                    write!(string, "  ⋯ ")?;
+                    write!(string, "  ⋯ ").unwrap();
                 } else {
                     let fine_offset = row + num_rows * col;
-                    write!(string, " {}", tensor.value_as_string(offset + fine_offset)?)?;
+                    write!(string, " {}", tensor.value_as_string(offset + fine_offset)?).unwrap();
                 }
             }
         }
-        writeln!(string, " │")?;
+        writeln!(string, " │").unwrap();
     }
 
     if is_last_matrix {
-        write!(string, "╵ └")?;
+        write!(string, "╵ └").unwrap();
     } else {
-        write!(string, "│ └")?;
+        write!(string, "│ └").unwrap();
     }
     for col in select_indices(num_cols) {
         if col == OMIT {
-            write!(string, "────")?;
+            write!(string, "────").unwrap();
         } else {
-            write!(string, "─{}", tensor.vertical_line())?;
+            write!(string, "─{}", tensor.vertical_line()).unwrap();
         }
     }
-    writeln!(string, "─┘")?;
+    writeln!(string, "─┘").unwrap();
 
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
-    use num_complex::Complex;
-
     use super::*;
 
     #[test]
@@ -722,13 +721,13 @@ mod tests {
         let tensor = Tensor::from_vec_col_major(
             vec![1, 7],
             vec![
-                Complex::<f64>::new(0.0, 1.0),
-                Complex::<f64>::new(2.0, 3.0),
-                Complex::<f64>::new(4.0, 5.0),
-                Complex::<f64>::new(6.0, 7.0),
-                Complex::<f64>::new(8.0, 9.0),
-                Complex::<f64>::new(10.0, 11.0),
-                Complex::<f64>::new(12.0, 13.0),
+                Complex::new(0.0, 1.0),
+                Complex::new(2.0, 3.0),
+                Complex::new(4.0, 5.0),
+                Complex::new(6.0, 7.0),
+                Complex::new(8.0, 9.0),
+                Complex::new(10.0, 11.0),
+                Complex::new(12.0, 13.0),
             ],
         )
         .unwrap();
@@ -746,7 +745,7 @@ mod tests {
 
     #[test]
     fn test_typed_tensor() {
-        let tensor = TypedTensor::<f64>::from_vec_col_major(vec![], vec![0.0]).unwrap();
+        let tensor = TypedTensor::from_vec_col_major(vec![], vec![0.0]).unwrap();
         let expected = String::from(
             "\
             TypedTensor • dtype: F64 • shape: []\n\
