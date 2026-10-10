@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::fmt::Write;
 
+use num_complex::Complex;
 use tenferro_runtime::{DType, Tensor, TypedTensor};
 
 trait Formattable {
@@ -10,6 +11,8 @@ trait Formattable {
     fn vertical_line(&self) -> String;
     fn value_as_string(&self, offset: usize) -> Result<String, Box<dyn Error>>;
 }
+
+// `{:+23.3e}`: `num_complex::Complex` does not support `<` (left-adjust).
 
 macro_rules! impl_formattable_for_typed_tensor {
     ($T:ty, $dtype:literal, $vertical_line_format:literal, $value_as_string_format:literal) => {
@@ -42,6 +45,8 @@ impl_formattable_for_typed_tensor!(f64, "F64", "{:─<11}", "{:<+11.3e}");
 impl_formattable_for_typed_tensor!(i32, "I32", "{:─<11}", "{:<+11.3e}");
 impl_formattable_for_typed_tensor!(i64, "I64", "{:─<11}", "{:<+11.3e}");
 impl_formattable_for_typed_tensor!(bool, "BOOL", "{:─<5}", "{:5}");
+impl_formattable_for_typed_tensor!(Complex<f32>, "C32", "{:─<23}", "{:+23.3e}");
+impl_formattable_for_typed_tensor!(Complex<f64>, "C64", "{:─<23}", "{:+23.3e}");
 
 impl Formattable for Tensor {
     fn type_as_string(&self) -> String {
@@ -63,6 +68,8 @@ impl Formattable for Tensor {
             DType::I32 => format!("{:─<11}", ""),
             DType::I64 => format!("{:─<11}", ""),
             DType::Bool => format!("{:─<5}", ""),
+            DType::C32 => format!("{:─<23}", ""),
+            DType::C64 => format!("{:─<23}", ""),
             dtype => panic!("dtype unsupported by pretty: {:?}", dtype),
         }
     }
@@ -74,6 +81,14 @@ impl Formattable for Tensor {
             DType::I32 => Ok(format!("{:<+11.3e}", self.as_slice::<i32>()?[offset])),
             DType::I64 => Ok(format!("{:<+11.3e}", self.as_slice::<i64>()?[offset])),
             DType::Bool => Ok(format!("{:5}", self.as_slice::<bool>()?[offset])),
+            DType::C32 => Ok(format!(
+                "{:+23.3e}",
+                self.as_slice::<Complex<f32>>()?[offset]
+            )),
+            DType::C64 => Ok(format!(
+                "{:+23.3e}",
+                self.as_slice::<Complex<f64>>()?[offset]
+            )),
             dtype => Err(format!("dtype unsupported by pretty: {:?}", dtype).into()),
         }
     }
