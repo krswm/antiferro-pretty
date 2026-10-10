@@ -3,16 +3,16 @@ use std::fmt::Write;
 
 use tenferro_runtime::{DType, Tensor, TypedTensor};
 
-trait Prettifiable {
+trait Formattable {
     fn type_as_string(&self) -> String;
     fn dtype_as_string(&self) -> String;
     fn shape(&self) -> &[usize];
     fn value_as_string(&self, offset: usize) -> Result<String, Box<dyn Error>>;
 }
 
-macro_rules! impl_prettifiable_for_typed_tensor {
+macro_rules! impl_formattable_for_typed_tensor {
     ($T:ty, $dtype:literal) => {
-        impl Prettifiable for TypedTensor<$T> {
+        impl Formattable for TypedTensor<$T> {
             fn type_as_string(&self) -> String {
                 String::from("TypedTensor")
             }
@@ -32,12 +32,12 @@ macro_rules! impl_prettifiable_for_typed_tensor {
     };
 }
 
-impl_prettifiable_for_typed_tensor!(f32, "F32");
-impl_prettifiable_for_typed_tensor!(f64, "F64");
-impl_prettifiable_for_typed_tensor!(i32, "I32");
-impl_prettifiable_for_typed_tensor!(i64, "I64");
+impl_formattable_for_typed_tensor!(f32, "F32");
+impl_formattable_for_typed_tensor!(f64, "F64");
+impl_formattable_for_typed_tensor!(i32, "I32");
+impl_formattable_for_typed_tensor!(i64, "I64");
 
-impl Prettifiable for Tensor {
+impl Formattable for Tensor {
     fn type_as_string(&self) -> String {
         String::from("Tensor")
     }
@@ -69,7 +69,7 @@ impl Prettifiable for Tensor {
 pub trait Pretty {
     /// Pretty-print a tenferro tensor to stdout (terminal).
     ///
-    /// Internally, this method uses [`Pretty::prettify`].
+    /// Internally, this method uses [`Pretty::format`].
     ///
     /// Supported dtypes are `F32`, `F64`, `I32`, and `I64`.
     ///
@@ -83,10 +83,10 @@ pub trait Pretty {
     /// use antiferro_pretty::Pretty;
     ///
     /// let tensor = Tensor::from_vec_col_major(vec![20, 10, 2], (0..400).map(|x| x as f64).collect())?;
-    /// tensor.show()?;
+    /// tensor.print()?;
     /// # Ok::<(), Box<dyn std::error::Error>>(())
     /// ```
-    fn show(&self) -> Result<(), Box<dyn Error>>;
+    fn print(&self) -> Result<(), Box<dyn Error>>;
 
     /// Prettify a tenferro tensor.
     ///
@@ -129,21 +129,21 @@ pub trait Pretty {
     ///     ╵ └─────────────────────────────────────────────────────────────────────────────┘\n\
     ///     ",
     /// );
-    /// assert_eq!(tensor.prettify()?, expected);
+    /// assert_eq!(tensor.format()?, expected);
     /// # Ok::<(), Box<dyn std::error::Error>>(())
     /// ```
-    fn prettify(&self) -> Result<String, Box<dyn Error>>;
+    fn format(&self) -> Result<String, Box<dyn Error>>;
 }
 
-impl<T: Prettifiable> Pretty for T {
-    fn show(&self) -> Result<(), Box<dyn Error>> {
-        print!("{}", self.prettify()?);
+impl<T: Formattable> Pretty for T {
+    fn print(&self) -> Result<(), Box<dyn Error>> {
+        print!("{}", self.format()?);
         Ok(())
     }
 
-    fn prettify(&self) -> Result<String, Box<dyn Error>> {
+    fn format(&self) -> Result<String, Box<dyn Error>> {
         let mut string = String::new();
-        prettify(self, &mut string)?;
+        format(self, &mut string)?;
         Ok(string)
     }
 }
@@ -158,7 +158,7 @@ fn select_indices(num: usize) -> Vec<usize> {
     }
 }
 
-fn prettify<T: Prettifiable>(tensor: &T, string: &mut String) -> Result<(), Box<dyn Error>> {
+fn format<T: Formattable>(tensor: &T, string: &mut String) -> Result<(), Box<dyn Error>> {
     writeln!(
         string,
         "{} • dtype: {} • shape: {:?}",
@@ -173,13 +173,13 @@ fn prettify<T: Prettifiable>(tensor: &T, string: &mut String) -> Result<(), Box<
 
     match tensor.shape().len() {
         0 => {
-            prettify_matrix(tensor, 1, 1, 0, true, string)?;
+            format_matrix(tensor, 1, 1, 0, true, string)?;
         }
         1 => {
-            prettify_matrix(tensor, tensor.shape()[0], 1, 0, true, string)?;
+            format_matrix(tensor, tensor.shape()[0], 1, 0, true, string)?;
         }
         2 => {
-            prettify_matrix(
+            format_matrix(
                 tensor,
                 tensor.shape()[0],
                 tensor.shape()[1],
@@ -234,7 +234,7 @@ fn prettify<T: Prettifiable>(tensor: &T, string: &mut String) -> Result<(), Box<
                     offset
                 };
 
-                prettify_matrix(
+                format_matrix(
                     tensor,
                     tensor.shape()[0],
                     tensor.shape()[1],
@@ -249,7 +249,7 @@ fn prettify<T: Prettifiable>(tensor: &T, string: &mut String) -> Result<(), Box<
     Ok(())
 }
 
-fn prettify_matrix<T: Prettifiable>(
+fn format_matrix<T: Formattable>(
     tensor: &T,
     num_rows: usize,
     num_cols: usize,
@@ -323,7 +323,7 @@ mod tests {
             ",
             //  +X.XXXeXXXX
         );
-        assert_eq!(tensor.prettify().unwrap(), expected);
+        assert_eq!(tensor.format().unwrap(), expected);
     }
 
     #[test]
@@ -338,14 +338,14 @@ mod tests {
             ",
             //  +X.XXXeXXXX
         );
-        assert_eq!(tensor.prettify().unwrap(), expected);
+        assert_eq!(tensor.format().unwrap(), expected);
     }
 
     #[test]
     fn test_0() {
         let tensor = Tensor::from_vec_col_major(vec![0], Vec::<f64>::new()).unwrap();
         let expected = String::from("Tensor • dtype: F64 • shape: [0]\n");
-        assert_eq!(tensor.prettify().unwrap(), expected);
+        assert_eq!(tensor.format().unwrap(), expected);
     }
 
     #[test]
@@ -367,7 +367,7 @@ mod tests {
             ",
             //  +X.XXXeXXXX
         );
-        assert_eq!(tensor.prettify().unwrap(), expected);
+        assert_eq!(tensor.format().unwrap(), expected);
     }
 
     #[test]
@@ -384,14 +384,14 @@ mod tests {
             ",
             //  +X.XXXeXXXX
         );
-        assert_eq!(tensor.prettify().unwrap(), expected);
+        assert_eq!(tensor.format().unwrap(), expected);
     }
 
     #[test]
     fn test_20() {
         let tensor = Tensor::from_vec_col_major(vec![2, 0], Vec::<f64>::new()).unwrap();
         let expected = String::from("Tensor • dtype: F64 • shape: [2, 0]\n");
-        assert_eq!(tensor.prettify().unwrap(), expected);
+        assert_eq!(tensor.format().unwrap(), expected);
     }
 
     #[test]
@@ -413,7 +413,7 @@ mod tests {
             ",
             //  +X.XXXeXXXX +X.XXXeXXXX +X.XXXeXXXX  ⋯  +X.XXXeXXXX +X.XXXeXXXX +X.XXXeXXXX
         );
-        assert_eq!(tensor.prettify().unwrap(), expected);
+        assert_eq!(tensor.format().unwrap(), expected);
     }
 
     #[test]
@@ -435,7 +435,7 @@ mod tests {
             ",
             //  +X.XXXeXXXX +X.XXXeXXXX
         );
-        assert_eq!(tensor.prettify().unwrap(), expected);
+        assert_eq!(tensor.format().unwrap(), expected);
     }
 
     #[test]
@@ -452,7 +452,7 @@ mod tests {
             ",
             //  +X.XXXeXXXX +X.XXXeXXXX +X.XXXeXXXX  ⋯  +X.XXXeXXXX +X.XXXeXXXX +X.XXXeXXXX
         );
-        assert_eq!(tensor.prettify().unwrap(), expected);
+        assert_eq!(tensor.format().unwrap(), expected);
     }
 
     #[test]
@@ -469,14 +469,14 @@ mod tests {
             ",
             //  +X.XXXeXXXX +X.XXXeXXXX
         );
-        assert_eq!(tensor.prettify().unwrap(), expected);
+        assert_eq!(tensor.format().unwrap(), expected);
     }
 
     #[test]
     fn test_220() {
         let tensor = Tensor::from_vec_col_major(vec![2, 2, 0], Vec::<f64>::new()).unwrap();
         let expected = String::from("Tensor • dtype: F64 • shape: [2, 2, 0]\n");
-        assert_eq!(tensor.prettify().unwrap(), expected);
+        assert_eq!(tensor.format().unwrap(), expected);
     }
 
     #[test]
@@ -525,7 +525,7 @@ mod tests {
             ",
             //  +X.XXXeXXXX +X.XXXeXXXX
         );
-        assert_eq!(tensor.prettify().unwrap(), expected);
+        assert_eq!(tensor.format().unwrap(), expected);
     }
 
     #[test]
@@ -550,14 +550,14 @@ mod tests {
             ",
             //  +X.XXXeXXXX +X.XXXeXXXX
         );
-        assert_eq!(tensor.prettify().unwrap(), expected);
+        assert_eq!(tensor.format().unwrap(), expected);
     }
 
     #[test]
     fn test_2220() {
         let tensor = Tensor::from_vec_col_major(vec![2, 2, 2, 0], Vec::<f64>::new()).unwrap();
         let expected = String::from("Tensor • dtype: F64 • shape: [2, 2, 2, 0]\n");
-        assert_eq!(tensor.prettify().unwrap(), expected);
+        assert_eq!(tensor.format().unwrap(), expected);
     }
 
     #[test]
@@ -643,7 +643,7 @@ mod tests {
             ",
             //  +X.XXXeXXXX +X.XXXeXXXX
         );
-        assert_eq!(tensor.prettify().unwrap(), expected);
+        assert_eq!(tensor.format().unwrap(), expected);
     }
 
     #[test]
@@ -681,6 +681,6 @@ mod tests {
             ",
             //  +X.XXXeXXXX +X.XXXeXXXX
         );
-        assert_eq!(tensor.prettify().unwrap(), expected);
+        assert_eq!(tensor.format().unwrap(), expected);
     }
 }
