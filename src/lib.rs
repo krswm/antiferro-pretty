@@ -689,12 +689,14 @@ mod tests {
 
     #[test]
     fn test_bool() {
-        let tensor =
-            Tensor::from_vec_col_major(vec![7], vec![false, true, false, true, false, true, false])
-                .unwrap();
+        let tensor = Tensor::from_vec_col_major(
+            vec![1, 7],
+            vec![false, true, false, true, false, true, false],
+        )
+        .unwrap();
         let expected = String::from(
             "\
-            Tensor • dtype: BOOL • shape: [7]\n\
+            Tensor • dtype: Bool • shape: [1, 7]\n\
             │ ┌─────────────────────────────────────────┐\n\
             │ │ false true  false  ⋯  false true  false │\n\
             ╵ └─────────────────────────────────────────┘\n\
@@ -707,7 +709,7 @@ mod tests {
     #[test]
     fn test_complex() {
         let tensor = Tensor::from_vec_col_major(
-            vec![7],
+            vec![1, 7],
             vec![
                 Complex::<f64>::new(0.0, 1.0),
                 Complex::<f64>::new(2.0, 3.0),
@@ -721,7 +723,7 @@ mod tests {
         .unwrap();
         let expected = String::from(
             "\
-            Tensor • dtype: C64 • shape: [7]\n\
+            Tensor • dtype: C64 • shape: [1, 7]\n\
             │ ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐\n\
             │ │       +0.000e0+1.000e0i       +2.000e0+3.000e0i       +4.000e0+5.000e0i  ⋯        +8.000e0+9.000e0i       +1.000e1+1.100e1i       +1.200e1+1.300e1i │\n\
             ╵ └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘\n\
