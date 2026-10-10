@@ -7,11 +7,12 @@ trait Formattable {
     fn type_as_string(&self) -> String;
     fn dtype_as_string(&self) -> String;
     fn shape(&self) -> &[usize];
+    fn vertical_line(&self) -> String;
     fn value_as_string(&self, offset: usize) -> Result<String, Box<dyn Error>>;
 }
 
 macro_rules! impl_formattable_for_typed_tensor {
-    ($T:ty, $dtype:literal) => {
+    ($T:ty, $dtype:literal, $vertical_line_format:literal, $value_as_string_format:literal) => {
         impl Formattable for TypedTensor<$T> {
             fn type_as_string(&self) -> String {
                 String::from("TypedTensor")
@@ -25,17 +26,21 @@ macro_rules! impl_formattable_for_typed_tensor {
                 self.shape()
             }
 
+            fn vertical_line(&self) -> String {
+                format!($vertical_line_format, "")
+            }
+
             fn value_as_string(&self, offset: usize) -> Result<String, Box<dyn Error>> {
-                Ok(format!("{:<+11.3e}", self.as_slice()?[offset]))
+                Ok(format!($value_as_string_format, self.as_slice()?[offset]))
             }
         }
     };
 }
 
-impl_formattable_for_typed_tensor!(f32, "F32");
-impl_formattable_for_typed_tensor!(f64, "F64");
-impl_formattable_for_typed_tensor!(i32, "I32");
-impl_formattable_for_typed_tensor!(i64, "I64");
+impl_formattable_for_typed_tensor!(f32, "F32", "{:─<11}", "{:<+11.3e}");
+impl_formattable_for_typed_tensor!(f64, "F64", "{:─<11}", "{:<+11.3e}");
+impl_formattable_for_typed_tensor!(i32, "I32", "{:─<11}", "{:<+11.3e}");
+impl_formattable_for_typed_tensor!(i64, "I64", "{:─<11}", "{:<+11.3e}");
 
 impl Formattable for Tensor {
     fn type_as_string(&self) -> String {
@@ -48,6 +53,16 @@ impl Formattable for Tensor {
 
     fn shape(&self) -> &[usize] {
         self.shape()
+    }
+
+    fn vertical_line(&self) -> String {
+        match self.dtype() {
+            DType::F32 => format!("{:─<11}", ""),
+            DType::F64 => format!("{:─<11}", ""),
+            DType::I32 => format!("{:─<11}", ""),
+            DType::I64 => format!("{:─<11}", ""),
+            dtype => panic!("dtype unsupported by pretty: {:?}", dtype),
+        }
     }
 
     fn value_as_string(&self, offset: usize) -> Result<String, Box<dyn Error>> {
@@ -260,7 +275,7 @@ fn format_matrix<T: Formattable>(
         if col == OMIT {
             write!(string, "────")?;
         } else {
-            write!(string, "────────────")?;
+            write!(string, "─{}", tensor.vertical_line())?;
         }
     }
     writeln!(string, "─┐")?;
@@ -297,7 +312,7 @@ fn format_matrix<T: Formattable>(
         if col == OMIT {
             write!(string, "────")?;
         } else {
-            write!(string, "────────────")?;
+            write!(string, "─{}", tensor.vertical_line())?;
         }
     }
     writeln!(string, "─┘")?;
