@@ -5,5 +5,5 @@ license = "MIT or Apache-2.0"
 
 [dependencies]
 num-complex = "0.4"
-tenferro-runtime = "0.7"
-tenferro-tensor = "0.7"
+tenferro-runtime = "0.8"
+tenferro-tensor = "0.8"
